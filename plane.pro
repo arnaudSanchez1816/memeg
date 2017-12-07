@@ -14,6 +14,8 @@ SOURCES += main.cpp \
     utils.cpp \
     mesh.cpp \
     model.cpp \
+    Voxel.cpp \
+    voxel.cpp
 
 SOURCES += \
     mainwidget.cpp \
@@ -29,12 +31,14 @@ HEADERS += \
     utils.h \
     mesh.h \
     model.h \
+    Voxel.h \
+    voxel.h
 
 RESOURCES += \
     shaders.qrc \
     textures.qrc
 
-CONFIG += c++11
+CONFIG += c++14
 
 
 # install
