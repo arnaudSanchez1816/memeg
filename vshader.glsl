@@ -8,8 +8,8 @@ uniform mat4 mvp_matrix;
 uniform sampler2D height_map;
 uniform float sizeV;
 
+
 attribute vec3 a_position;
-attribute vec3 a_normal;
 attribute vec2 a_texcoord;
 
 varying vec2 v_texcoord;

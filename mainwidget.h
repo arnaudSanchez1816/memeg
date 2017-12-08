@@ -51,7 +51,6 @@
 #ifndef MAINWIDGET_H
 #define MAINWIDGET_H
 
-#include "geometryengine.h"
 #include "camera.h"
 #include "seasonmanager.h"
 #include "particleengine.h"

@@ -35,6 +35,7 @@ public:
     QVector3D getFront();
     QVector3D getWorldUp();
     QVector3D getRight();
+    QVector3D getPos();
 
 private:
     float pitch, yaw;

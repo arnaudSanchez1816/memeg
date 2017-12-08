@@ -58,6 +58,10 @@ QVector3D Camera::getRight() {
     return cameraRight;
 }
 
+QVector3D Camera::getPos() {
+    return cameraPos;
+}
+
 void Camera::orbitAround(QMatrix4x4 &matrix, float y, float p) {
 
     cameraPos += QVector3D::crossProduct(cameraFront,cameraUp).normalized() * 0.1f;

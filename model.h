@@ -17,7 +17,6 @@ public:
         : _program(program)
     {
         loadModel(path);
-        std::cout << "fin chargement" << std::endl;
     }
     void draw();
 private:

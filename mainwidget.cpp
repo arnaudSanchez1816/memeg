@@ -157,6 +157,9 @@ void MainWidget::initializeGL()
     particleEngineRain = new ParticleEngine(ParticleType::Rain);
     particleEngineSnow = new ParticleEngine(ParticleType::Snow);
     model = new Model("assets/nanosuit/nanosuit.obj", &modelProgram);
+    //model = new Model("assets/plane/Wraith Raider Starship.obj", &modelProgram);
+    //model->setScale(0.01, 0.01, 0.01);
+    //model->rotateY(-90);
     // Use QBasicTimer because its faster than QTimer
     timer.start(1000/fps, this);
 }
@@ -272,7 +275,9 @@ void MainWidget::paintGL()
         pe.updateParticles();
         pe.drawParticles(&particlesProgram);
     }
+    height->release();
     modelProgram.bind();
+    modelProgram.setUniformValue("viewpos", camera.getPos());
     modelProgram.setUniformValue("mvp_matrix", projection * matrix);
     model->draw();
 }
