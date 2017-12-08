@@ -44,7 +44,7 @@ void ParticleEngine::drawParticles(QOpenGLShaderProgram *program) {
     glDrawArrays(GL_POINTS, 0, particlesData.size());
 }
 
-void ParticleEngine::generateParticles(float maxPerSeconde) {
+void ParticleEngine::generateParticles(int mapSize, float maxPerSeconde) {
     double delta = 0.01;
     if(lastTime == 0) {
         lastTime = QTime::currentTime().msecsSinceStartOfDay();
@@ -58,7 +58,7 @@ void ParticleEngine::generateParticles(float maxPerSeconde) {
     }
     for(int i = 0; i < newParticles; ++i) {
         int index = findUnusedParticles();
-        particleContainer[index] = Particle::generateNewParticle(type);
+        particleContainer[index] = Particle::generateNewParticle(mapSize, type);
         particlesData.emplace_back(particleContainer[index].getPosSize(), particleContainer[index].getColor());
     }
 }

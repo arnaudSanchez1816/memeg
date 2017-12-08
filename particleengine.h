@@ -26,7 +26,7 @@ public:
 
     void drawParticles(QOpenGLShaderProgram *program);
     void updateParticles();
-    void generateParticles(float seuilGeneration);
+    void generateParticles(int mapSize, float seuilGeneration);
     int findUnusedParticles();
     void setParticleType(ParticleType t);
 

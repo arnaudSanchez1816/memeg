@@ -7,7 +7,6 @@ precision mediump float;
 varying vec4 v_color;
 varying float render;
 
-uniform vec3 lightColor;
 
 //! [0]
 void main()

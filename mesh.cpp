@@ -1,6 +1,9 @@
 #include "mesh.h"
 #include <iostream>
 
+const std::string Mesh::DIFFUSE_MAP = "texture_diffuse";
+const std::string Mesh::SPECULAR_MAP = "texture_specular";
+
 Mesh::~Mesh()
 {
     arrayBuf.destroy();
@@ -37,14 +40,18 @@ void Mesh::draw(QOpenGLShaderProgram &_program) {
     for(auto t = _textures.begin(); t != _textures.end(); ++t, ++i) {
         std::string number;
         std::string name = t->type;
-        if(name == "texture_diffuse") {
+        if(name == DIFFUSE_MAP) {
             number = std::to_string(diffuseNr++);
-        } else if(name == "texture_specular") {
+        } else if(name == SPECULAR_MAP) {
             number = std::to_string(specularNr++);
         }
         t->texture->bind(t->id);
         std::string v = name + number;
-        _program.setUniformValue(v.c_str(), t->id);
+        if(t->uniformName != "") {
+            _program.setUniformValue(t->uniformName.c_str(), t->id);
+        } else {
+            _program.setUniformValue(v.c_str(), t->id);
+        }
     }
     glDrawElements(GL_TRIANGLES, _indices.size(), GL_UNSIGNED_INT, 0);
     vao.release();

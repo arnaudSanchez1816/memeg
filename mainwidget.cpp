@@ -57,18 +57,13 @@
 
 MainWidget::MainWidget(int fps, Seasons s, QWidget *parent) :
     QOpenGLWidget(parent),
-    geometries(0),
-    height(0),
-    sand(0),
-    rock(0),
-    angularSpeed(0),
     model(nullptr),
+    terrain(nullptr),
     camera(),
     orbit(false),
     fps(fps),
     particleEngineSnow(nullptr),
-    particleEngineRain(nullptr),
-    lightPos(4.0f, 10.0f, -4.0f)
+    particleEngineRain(nullptr)
 {
     setMouseTracking(true);
     seasonTimer = new QTimer();
@@ -82,19 +77,14 @@ MainWidget::~MainWidget()
     // Make sure the context is current when deleting the texture
     // and the buffers.
     makeCurrent();
+    delete terrain;
     delete height;
-    delete sand;
-    delete rock;
-    delete snow_rock;
-    delete snow_sand;
-    delete geometries;
     delete particleEngineSnow;
     delete particleEngineRain;
     delete model;
     doneCurrent();
 }
 
-//! [0]
 void MainWidget::mousePressEvent(QMouseEvent *e)
 {
     // Save mouse press position
@@ -103,48 +93,18 @@ void MainWidget::mousePressEvent(QMouseEvent *e)
 
 void MainWidget::mouseReleaseEvent(QMouseEvent *e)
 {
-
     if(e->button() == Qt::RightButton) {
-       /* // Mouse release position - mouse press position
-        QVector2D diff = QVector2D(e->localPos()) - mousePressPosition;
-
-        // Rotation axis is perpendicular to the mouse position difference
-        // vector
-        QVector3D n = QVector3D(diff.y(), diff.x(), 0.0).normalized();
-
-        // Accelerate angular speed relative to the length of the mouse sweep
-        qreal acc = diff.length() / 100.0;
-
-        // Calculate new rotation axis as weighted sum
-        rotationAxis = (rotationAxis * angularSpeed + n * acc).normalized();
-        // Increase angular speed
-        angularSpeed += acc;*/
         orbit = !orbit;
     }
 }
-//! [0]
 
 void MainWidget::wheelEvent(QWheelEvent *event) {
 }
 
-//! [1]
 void MainWidget::timerEvent(QTimerEvent *)
 {
-    /*// Decrease angular speed (friction)
-    angularSpeed *= 0.99;
-
-    // Stop rotation when speed goes below threshold
-    if (angularSpeed < 0.01) {
-        angularSpeed = 0.0;
-    } else {
-        // Update rotation
-        rotation = QQuaternion::fromAxisAndAngle(rotationAxis, angularSpeed) * rotation;
-        // Request an update
-        update();
-    }*/
     update();
 }
-//! [1]
 
 void MainWidget::keyPressEvent(QKeyEvent *event) {
     switch(event->key()) {
@@ -183,11 +143,9 @@ void MainWidget::initializeGL()
     initializeOpenGLFunctions();
 
     glClearColor(0, 0, 0, 1);
-    //glClearColor(seasonM->getCurrentSeasonColor().redF(), seasonM->getCurrentSeasonColor().greenF(), seasonM->getCurrentSeasonColor().blueF(), 1);
     initTextures();
     initShaders();
 
-//! [2]
     // Enable depth buffer
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
@@ -195,17 +153,14 @@ void MainWidget::initializeGL()
     // Enable back face culling
     //glEnable(GL_CULL_FACE);
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//! [2]
-    geometries = new GeometryEngine;
+    terrain = new Terrain(100, 400, program);
     particleEngineRain = new ParticleEngine(ParticleType::Rain);
     particleEngineSnow = new ParticleEngine(ParticleType::Snow);
-    //model = new Model("assets/nanosuit/nanosuit.obj", &modelProgram);
     model = new Model("assets/nanosuit/nanosuit.obj", &modelProgram);
     // Use QBasicTimer because its faster than QTimer
     timer.start(1000/fps, this);
 }
 
-//! [3]
 void MainWidget::initShaders()
 {
         // Compile vertex shader
@@ -244,43 +199,23 @@ void MainWidget::initShaders()
         if (!modelProgram.link())
             close();
 }
-//! [3]
 
-//! [4]
 void MainWidget::initTextures()
 {
     // Load heightmap and cube.png image
     height = new QOpenGLTexture(QImage(":/heightmap-1.png").mirrored());
-    sand= new QOpenGLTexture(QImage(":/sand.jpg").mirrored());
-    rock= new QOpenGLTexture(QImage(":/rock.jpg").mirrored());
-    snow_rock= new QOpenGLTexture(QImage(":/snow_rock.jpg").mirrored());
-    snow_sand= new QOpenGLTexture(QImage(":/snow_sand.jpg").mirrored());
 
     // Set nearest filtering mode for texture minification
     height->setMinificationFilter(QOpenGLTexture::Nearest);
-    sand->setMinificationFilter(QOpenGLTexture::Nearest);
-    rock->setMinificationFilter(QOpenGLTexture::Nearest);
-    snow_rock->setMinificationFilter(QOpenGLTexture::Nearest);
-    snow_sand->setMinificationFilter(QOpenGLTexture::Nearest);
 
     // Set bilinear filtering mode for texture magnification
     height->setMagnificationFilter(QOpenGLTexture::Linear);
-    sand->setMagnificationFilter(QOpenGLTexture::Linear);
-    rock->setMagnificationFilter(QOpenGLTexture::Linear);
-    snow_rock->setMagnificationFilter(QOpenGLTexture::Linear);
-    snow_sand->setMagnificationFilter(QOpenGLTexture::Linear);
 
     // Wrap texture coordinates by repeating
     // f.ex. texture coordinate (1.1, 1.2) is same as (0.1, 0.2)
     height->setWrapMode(QOpenGLTexture::Repeat);
-    sand->setWrapMode(QOpenGLTexture::Repeat);
-    rock->setWrapMode(QOpenGLTexture::Repeat);
-    snow_rock->setWrapMode(QOpenGLTexture::Repeat);
-    snow_sand->setWrapMode(QOpenGLTexture::Repeat);
 }
-//! [4]
 
-//! [5]
 void MainWidget::resizeGL(int w, int h)
 {
     // Calculate aspect ratio
@@ -294,7 +229,6 @@ void MainWidget::resizeGL(int w, int h)
     // Set perspective projection
     projection.perspective(fov, aspect, zNear, zFar);
 }
-//! [5]
 
 void MainWidget::paintGL()
 {
@@ -307,64 +241,38 @@ void MainWidget::paintGL()
     //QColor color = LerpHSV(seasonM->getCurrentSeasonColor().toHsv(), seasonM->getNextSeasonColor().toHsv(), 1.0 - (seasonTimer->remainingTime() /(float) CALENDAR_TIME));
     QColor color = lerp(seasonM->getCurrentSeasonColor(), seasonM->getNextSeasonColor(),1.0 - (seasonTimer->remainingTime() / (float) CALENDAR_TIME));
     glClearColor(color.redF(), color.greenF(), color.blueF(), 1);
-    //program.bind();
     // Clear color and depth buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    /*height->bind(0);
-    sand->bind(1);
-    rock->bind(2);
-    snow_rock->bind(3);
-    snow_sand->bind(4);*/
-
     // Calculate model view transformation
     QMatrix4x4 matrix;
     if(orbit) {
         camera.orbitAround(matrix, 1.0f , 0.0f);
-    }/*else {
-        camera.lookAt(matrix);
-    }*/
+    }
     camera.lookAt(matrix);
-    matrix.rotate(rotation);
-
-    // Set modelview-projection matrix
- /*   program.setUniformValue("mvp_matrix", projection * matrix);
-    program.setUniformValue("lightColor", QVector3D(1.0f, 1.0f, 1.0f));
-    program.setUniformValue("height_map", 0);
-    program.setUniformValue("sizeV", (float) PLANE_SIZE);
-    // Use texture unit 1 which contains cube.png
-    if(seasonM->getSeason() != Seasons::Winter) {
-        program.setUniformValue("sand", 1);
+    program.bind();
+    program.setUniformValue("mvp_matrix", projection * matrix);
+    if(seasonM->getSeason() == Seasons::Winter) {
+        terrain->draw(program, 1);
     } else {
-        program.setUniformValue("sand", 4);
+        terrain->draw(program, 0);
     }
-    if(seasonM->getSeason() != Seasons::Winter) {
-        program.setUniformValue("rock", 2);
-    } else {
-        program.setUniformValue("rock", 3);
-    }
-    // Draw cube geometry
-    geometries->drawPlaneGeometry(&program);
-    // draw particles
     particlesProgram.bind();
     height->bind(0);
     particlesProgram.setUniformValue("height_map", 0);
     particlesProgram.setUniformValue("mvp_matrix", projection * matrix);
-    particlesProgram.setUniformValue("lightColor", QVector3D(1.0f, 1.0f, 1.0f));
-    particlesProgram.setUniformValue("map_size", MAP_SIZE);
+    particlesProgram.setUniformValue("map_size", terrain->getSize());
     if(seasonM->getSeason() == Seasons::Winter) {
         ParticleEngine &pe = *particleEngineSnow;
-        pe.generateParticles(400.0f);
+        pe.generateParticles(terrain->getSize(), 400.0f);
         pe.updateParticles();
         pe.drawParticles(&particlesProgram);
     } else if(seasonM->getSeason() == Seasons::Autumn) {
         ParticleEngine &pe = *particleEngineRain;
-        pe.generateParticles(2000.0f);
+        pe.generateParticles(terrain->getSize(), 2000.0f);
         pe.updateParticles();
         pe.drawParticles(&particlesProgram);
-    }*/
+    }
     modelProgram.bind();
     modelProgram.setUniformValue("mvp_matrix", projection * matrix);
     model->draw();
 }
-
-

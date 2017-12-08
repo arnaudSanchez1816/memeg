@@ -6,6 +6,7 @@ unsigned int cptId = 0;
 
 void Model::draw() {
     for(int i = 0; i < _meshes.size() ; ++i) {
+        _program->setUniformValue("transform", _transform);
         _meshes[i]->draw(*_program);
     }
 }
@@ -70,9 +71,9 @@ std::unique_ptr<Mesh> Model::processMesh(aiMesh *mesh, const aiScene *scene) {
     }
     if(mesh->mMaterialIndex >= 0) { //si ya des materials
         aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-        std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+        std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, Mesh::DIFFUSE_MAP);
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-        std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+        std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, Mesh::SPECULAR_MAP);
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
     }
     return std::unique_ptr<Mesh>(new Mesh(vertices, indices, textures, *_program));
@@ -93,10 +94,10 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType 
         _loadedTextures.push_back(tex);
         texture.id = cptId++;
         texture.path = str;
+        texture.uniformName = "";
         texture.type = typeName;
         texture.texture = tex;
         textures.push_back(texture);
     }
     return textures;
 }
-

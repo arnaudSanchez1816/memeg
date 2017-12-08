@@ -56,6 +56,7 @@
 #include "seasonmanager.h"
 #include "particleengine.h"
 #include "model.h"
+#include "terrain.h"
 
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
@@ -98,26 +99,18 @@ protected:
 private:
     QBasicTimer timer;
     QTimer *seasonTimer;
-    QOpenGLShaderProgram program, particlesProgram, modelProgram;
-    GeometryEngine *geometries;
-
     QOpenGLTexture *height;
-    QOpenGLTexture *rock, *snow_rock;
-    QOpenGLTexture *sand, *snow_sand;
-
     QMatrix4x4 projection;
     Camera camera;
     bool orbit;
     QVector2D mousePressPosition;
-    QVector3D rotationAxis;
-    qreal angularSpeed;
-    QQuaternion rotation;
     int fov, fps;
     SeasonManager *seasonM;
     ParticleEngine *particleEngineSnow, *particleEngineRain;
     QVector3D lightPos;
     Model *model;
-
+    Terrain *terrain;
+    QOpenGLShaderProgram program, particlesProgram, modelProgram;
 };
 
 #endif // MAINWIDGET_H

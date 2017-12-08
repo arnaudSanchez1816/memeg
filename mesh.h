@@ -22,12 +22,16 @@ struct Texture {
     QOpenGLTexture *texture;
     unsigned int id;
     std::string type;
+    std::string uniformName;
     aiString path;
 };
 
 class Mesh : protected QOpenGLFunctions
 {
 public:
+    const static std::string DIFFUSE_MAP;
+    const static std::string SPECULAR_MAP;
+
     std::vector<Vertex> _vertices;
     std::vector<unsigned int> _indices;
     std::vector<Texture> _textures;

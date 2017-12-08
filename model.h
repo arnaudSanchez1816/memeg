@@ -8,11 +8,12 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <iostream>
+#include "gameobject.h"
 
-class Model
+class Model : public GameObject
 {
 public:
-    Model(std::string path, QOpenGLShaderProgram  *program)
+    Model(std::string path, QOpenGLShaderProgram *program)
         : _program(program)
     {
         loadModel(path);

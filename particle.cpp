@@ -69,22 +69,22 @@ bool Particle::isAlive() {
     return _life > 0.0f;
 }
 
-Particle Particle::generateNewParticle(ParticleType type) {
+Particle Particle::generateNewParticle(int mapSize, ParticleType type) {
     switch (type) {
     case ParticleType::Snow:
-        return generateSnowParticle();
+        return generateSnowParticle(mapSize);
     case ParticleType::Rain:
-        return generateRainParticle();
+        return generateRainParticle(mapSize);
     default:
         break;
     }
-    return generateSnowParticle();
+    return generateSnowParticle(mapSize);
 }
 
-Particle Particle::generateSnowParticle() {
+Particle Particle::generateSnowParticle(int mapSize) {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<> disXZ(0.0, (float) MAP_SIZE);
+    std::uniform_real_distribution<> disXZ(0.0, (float) mapSize);
     std::uniform_real_distribution<> disY(8.0, 13.0);
     std::uniform_real_distribution<> disSp(2.0, 2.5);
     std::uniform_int_distribution<> disPhi(160, 170);
@@ -98,10 +98,10 @@ Particle Particle::generateSnowParticle() {
                     , disSi(gen));
 }
 
-Particle Particle::generateRainParticle() {
+Particle Particle::generateRainParticle(int mapSize) {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<> disXZ(0.0, (float) MAP_SIZE);
+    std::uniform_real_distribution<> disXZ(0.0, (float) mapSize);
     std::uniform_real_distribution<> disY(8.0, 13.0);
     std::uniform_real_distribution<> disSp(10.0, 12.0);
     std::uniform_int_distribution<> disPhi(170, 175);

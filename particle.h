@@ -22,7 +22,7 @@ public:
     QVector4D getPosSize();
     QVector4D getColor();
     bool isAlive();
-    static Particle generateNewParticle(ParticleType type);
+    static Particle generateNewParticle(int mapSize, ParticleType type);
 
 private:
     // _position: position of particle
@@ -33,8 +33,8 @@ private:
     float _life, _size, _originalLife, _originalSize;
     double lastTime;
 
-    static Particle generateSnowParticle();
-    static Particle generateRainParticle();
+    static Particle generateSnowParticle(int mapSize);
+    static Particle generateRainParticle(int mapSize);
 };
 
 #endif // PARTICLE_H

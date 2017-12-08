@@ -12,7 +12,5 @@ varying vec2 TexCoords;
 void main()
 {
     gl_FragColor = vec4(texture2D(texture_diffuse1, TexCoords).rgb, 1.0);
-    //gl_FragColor = texture2D(texture_diffuse1, TexCoords);
-    //gl_FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 }
 //! [0]
