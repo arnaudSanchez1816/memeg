@@ -62,6 +62,7 @@ MainWidget::MainWidget(int fps, Seasons s, QWidget *parent) :
     camera(),
     orbit(false),
     fps(fps),
+    skyboxTexture(nullptr),
     particleEngineSnow(nullptr),
     particleEngineRain(nullptr)
 {
@@ -79,6 +80,7 @@ MainWidget::~MainWidget()
     makeCurrent();
     delete terrain;
     delete height;
+    delete skyboxTexture;
     delete particleEngineSnow;
     delete particleEngineRain;
     delete model;
@@ -143,8 +145,8 @@ void MainWidget::initializeGL()
     initializeOpenGLFunctions();
 
     glClearColor(0, 0, 0, 1);
-    initTextures();
     initShaders();
+    initTextures();
 
     // Enable depth buffer
     glEnable(GL_DEPTH_TEST);
@@ -170,11 +172,9 @@ void MainWidget::initShaders()
         // Compile vertex shader
         if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/vshader.glsl"))
             close();
-
         // Compile fragment shader
         if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/fshader.glsl"))
             close();
-
         // Link shader pipeline
         if (!program.link())
             close();
@@ -182,11 +182,9 @@ void MainWidget::initShaders()
         // Compile vertex shader
         if (!particlesProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/prvshader.glsl"))
             close();
-
         // Compile fragment shader
         if (!particlesProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/prfshader.glsl"))
             close();
-
         // Link shader pipeline
         if (!particlesProgram.link())
             close();
@@ -194,13 +192,21 @@ void MainWidget::initShaders()
         // Compile vertex shader
         if (!modelProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/modelvshader.glsl"))
             close();
-
         // Compile fragment shader
         if (!modelProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/modelfshader.glsl"))
             close();
-
         // Link shader pipeline
         if (!modelProgram.link())
+            close();
+
+        // Compile vertex shader
+        if (!sbProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/sbvshader.glsl"))
+            close();
+        // Compile fragment shader
+        if (!sbProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/sbfshader.glsl"))
+            close();
+        // Link shader pipeline
+        if (!sbProgram.link())
             close();
 }
 
@@ -208,7 +214,6 @@ void MainWidget::initTextures()
 {
     // Load heightmap and cube.png image
     height = new QOpenGLTexture(QImage(":/heightmap-1.png").mirrored());
-
     // Set nearest filtering mode for texture minification
     height->setMinificationFilter(QOpenGLTexture::Nearest);
 
@@ -218,6 +223,87 @@ void MainWidget::initTextures()
     // Wrap texture coordinates by repeating
     // f.ex. texture coordinate (1.1, 1.2) is same as (0.1, 0.2)
     height->setWrapMode(QOpenGLTexture::Repeat);
+    //*** load skybox ***//
+    loadCubeMap();
+}
+
+void MainWidget::loadCubeMap() {
+    skyboxTexture = new QOpenGLTexture(QOpenGLTexture::TargetCubeMap);
+    skyboxTexture->create();
+    for (unsigned int i = 0; i < sbFaces.size(); i++) {
+        QImage img = QImage(sbFaces[i].c_str()).convertToFormat(QImage::Format_RGBA8888);
+        unsigned char *data = img.bits();
+        if(i == 0) { //finir init la texture
+            skyboxTexture->setSize(img.width(), img.height(), img.depth());
+            skyboxTexture->setFormat(QOpenGLTexture::RGBA8_UNorm);
+            skyboxTexture->allocateStorage();
+        }
+        if (data) {
+            QOpenGLTexture::CubeMapFace cbf = (QOpenGLTexture::CubeMapFace) (GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
+            skyboxTexture->setData(0, 0, cbf,
+                                    QOpenGLTexture::RGBA, QOpenGLTexture::UInt8,
+                                    (const void*)data, 0);
+        }
+        else {
+            std::cout << "Cubemap texture failed to load at path: " << sbFaces[i] << std::endl;
+        }
+    }
+    skyboxTexture->setWrapMode(QOpenGLTexture::ClampToEdge);
+    skyboxTexture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+    skyboxTexture->setMagnificationFilter(QOpenGLTexture::LinearMipMapLinear);
+    skyboxTexture->generateMipMaps();
+    //build cubemap
+    std::vector<float> skyboxVertices= {
+        // positions
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f
+    };
+    std::vector<Vertex> sbVertices;
+    for(int i = 0; i < skyboxVertices.size(); i+=3) {
+        Vertex v;
+        v._position = QVector3D(skyboxVertices[i], skyboxVertices[i + 1], skyboxVertices[i + 2]);
+        sbVertices.push_back(v);
+    }
+    cubeMap = new Mesh(sbVertices, std::vector<unsigned int>(), std::vector<Texture>(), sbProgram);
 }
 
 void MainWidget::resizeGL(int w, int h)
@@ -225,7 +311,7 @@ void MainWidget::resizeGL(int w, int h)
     // Calculate aspect ratio
     qreal aspect = qreal(w) / qreal(h ? h : 1);
 
-    const qreal zNear = 0.3, zFar = 500.0, fov = 45.0;
+    const qreal zNear = 0.3, zFar = 2000.0, fov = 45.0;
 
     // Reset projection
     projection.setToIdentity();
@@ -244,9 +330,10 @@ void MainWidget::paintGL()
         return QColor::fromRgbF(h, s, v);
     };
     //QColor color = LerpHSV(seasonM->getCurrentSeasonColor().toHsv(), seasonM->getNextSeasonColor().toHsv(), 1.0 - (seasonTimer->remainingTime() /(float) CALENDAR_TIME));
-    QColor color = lerp(seasonM->getCurrentSeasonColor(), seasonM->getNextSeasonColor(),1.0 - (seasonTimer->remainingTime() / (float) CALENDAR_TIME));
+    //QColor color = lerp(seasonM->getCurrentSeasonColor(), seasonM->getNextSeasonColor(),1.0 - (seasonTimer->remainingTime() / (float) CALENDAR_TIME));
     //dirLight._diffuse = QVector3D(color.redF(), color.greenF(), color.blueF()).normalized(); //lol
-    glClearColor(color.redF(), color.greenF(), color.blueF(), 1);
+    //glClearColor(color.redF(), color.greenF(), color.blueF(), 1);
+    glClearColor(0.0, 0.0, 0.0, 1.0);
     // Clear color and depth buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Calculate model view transformation
@@ -255,6 +342,7 @@ void MainWidget::paintGL()
         camera.orbitAround(matrix, 1.0f , 0.0f);
     }
     camera.lookAt(matrix);
+    //scene
     program.bind();
     program.setUniformValue("mvp_matrix", projection * matrix);
     program.setUniformValue("dirLight.sunDirection", dirLight._pos);
@@ -291,4 +379,14 @@ void MainWidget::paintGL()
     modelProgram.setUniformValue("dirLight.diffuse", dirLight._diffuse);
     modelProgram.setUniformValue("dirLight.specular", dirLight._specular);
     model->draw();
+    //skybox
+    glDepthFunc(GL_LEQUAL);
+    sbProgram.bind();
+    skyboxTexture->bind(0);
+    QMatrix4x4 view = matrix;
+    view.setColumn(3, QVector4D(0.0,0.0,0.0,1.0));
+    sbProgram.setUniformValue("mvp_matrix", projection * view);
+    sbProgram.setUniformValue("skybox", 0);
+    cubeMap->draw(sbProgram);
+    glDepthFunc(GL_LESS);
 }

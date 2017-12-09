@@ -7,6 +7,7 @@ unsigned int cptId = 0;
 void Model::draw() {
     for(int i = 0; i < _meshes.size() ; ++i) {
         _program->setUniformValue("transform", _transform);
+        _program->setUniformValue("normal_mat", _transform.normalMatrix());
         _meshes[i]->draw(*_program);
     }
 }

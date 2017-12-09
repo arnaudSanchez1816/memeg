@@ -1,8 +1,9 @@
 #version 330 core
 uniform mat4 mvp_matrix;
 uniform sampler2D height_map;
+uniform sampler2D noise_map;
 uniform float sizeV;
-uniform vec3 sunDirection;
+uniform float iTime;
 
 attribute vec3 a_position;
 attribute vec2 a_texcoord;

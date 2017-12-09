@@ -110,7 +110,27 @@ private:
     QVector3D lightPos;
     Model *model;
     Terrain *terrain;
-    QOpenGLShaderProgram program, particlesProgram, modelProgram;
+    QOpenGLShaderProgram program, particlesProgram, modelProgram, sbProgram;
+    Mesh *cubeMap;
+    QOpenGLTexture *skyboxTexture;
+    /*
+    const std::vector<std::string> sbFaces { //skybox2
+        "assets/skybox2/right.jpg",
+        "assets/skybox2/left.jpg",
+        "assets/skybox2/top.jpg",
+        "assets/skybox2/bottom.jpg",
+        "assets/skybox2/back.jpg",
+        "assets/skybox2/front.jpg"
+    };*/
+    const std::vector<std::string> sbFaces { //skybox1
+        "assets/skybox/miramar_rt.jpg",
+        "assets/skybox/miramar_lf.jpg",
+        "assets/skybox/miramar_up.jpg",
+        "assets/skybox/miramar_dn.jpg",
+        "assets/skybox/miramar_bk.jpg",
+        "assets/skybox/miramar_ft.jpg"
+    };
+    void loadCubeMap();
 };
 
 #endif // MAINWIDGET_H

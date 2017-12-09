@@ -6,5 +6,7 @@
         <file>prvshader.glsl</file>
         <file>modelfshader.glsl</file>
         <file>modelvshader.glsl</file>
+        <file>sbfshader.glsl</file>
+        <file>sbvshader.glsl</file>
     </qresource>
 </RCC>
