@@ -157,8 +157,9 @@ void MainWidget::initializeGL()
     particleEngineRain = new ParticleEngine(ParticleType::Rain);
     particleEngineSnow = new ParticleEngine(ParticleType::Snow);
     model = new Model("assets/nanosuit/nanosuit.obj", &modelProgram);
+    //model = new Model("assets/ship/SciFi_Fighter_AK5.obj", &modelProgram);
     //model = new Model("assets/plane/Wraith Raider Starship.obj", &modelProgram);
-    //model->setScale(0.01, 0.01, 0.01);
+    //model->setScale(0.001, 0.001, 0.001);
     //model->rotateY(-90);
     // Use QBasicTimer because its faster than QTimer
     timer.start(1000/fps, this);
@@ -235,6 +236,7 @@ void MainWidget::resizeGL(int w, int h)
 
 void MainWidget::paintGL()
 {
+    Light dirLight(QVector3D(0.5, -0.4, -0.2));
     auto lerp = [] (QColor &&a, QColor &&b, float step) {
         float h = a.redF() * (1.0 - step) + b.redF() * step;
         float s = a.greenF() * (1.0 - step) + b.greenF() * step;
@@ -243,6 +245,7 @@ void MainWidget::paintGL()
     };
     //QColor color = LerpHSV(seasonM->getCurrentSeasonColor().toHsv(), seasonM->getNextSeasonColor().toHsv(), 1.0 - (seasonTimer->remainingTime() /(float) CALENDAR_TIME));
     QColor color = lerp(seasonM->getCurrentSeasonColor(), seasonM->getNextSeasonColor(),1.0 - (seasonTimer->remainingTime() / (float) CALENDAR_TIME));
+    //dirLight._diffuse = QVector3D(color.redF(), color.greenF(), color.blueF()).normalized(); //lol
     glClearColor(color.redF(), color.greenF(), color.blueF(), 1);
     // Clear color and depth buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -254,6 +257,10 @@ void MainWidget::paintGL()
     camera.lookAt(matrix);
     program.bind();
     program.setUniformValue("mvp_matrix", projection * matrix);
+    program.setUniformValue("dirLight.sunDirection", dirLight._pos);
+    program.setUniformValue("dirLight.ambient", dirLight._ambient);
+    program.setUniformValue("dirLight.diffuse", dirLight._diffuse);
+    program.setUniformValue("dirLight.specular", dirLight._specular);
     if(seasonM->getSeason() == Seasons::Winter) {
         terrain->draw(program, 1);
     } else {
@@ -279,5 +286,9 @@ void MainWidget::paintGL()
     modelProgram.bind();
     modelProgram.setUniformValue("viewpos", camera.getPos());
     modelProgram.setUniformValue("mvp_matrix", projection * matrix);
+    modelProgram.setUniformValue("dirLight.sunDirection", dirLight._pos);
+    modelProgram.setUniformValue("dirLight.ambient", dirLight._ambient);
+    modelProgram.setUniformValue("dirLight.diffuse", dirLight._diffuse);
+    modelProgram.setUniformValue("dirLight.specular", dirLight._specular);
     model->draw();
 }

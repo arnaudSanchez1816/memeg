@@ -56,6 +56,7 @@
 #include "particleengine.h"
 #include "model.h"
 #include "terrain.h"
+#include "light.h"
 
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>

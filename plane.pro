@@ -15,7 +15,8 @@ SOURCES += main.cpp \
     mesh.cpp \
     model.cpp \
     gameobject.cpp \
-    terrain.cpp
+    terrain.cpp \
+    light.cpp
 
 SOURCES += \
     mainwidget.cpp
@@ -30,7 +31,8 @@ HEADERS += \
     mesh.h \
     model.h \
     gameobject.h \
-    terrain.h
+    terrain.h \
+    light.h
 
 RESOURCES += \
     shaders.qrc \
