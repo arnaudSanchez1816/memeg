@@ -97,7 +97,7 @@ MainWidget::~MainWidget()
 
 void MainWidget::mousePressEvent(QMouseEvent *e) {
     // Save mouse press position
-    //mousePressPosition = QVector2D(e->localPos());
+    mousePressPosition = QVector2D(e->localPos());
 }
 
 void MainWidget::mouseReleaseEvent(QMouseEvent *e) {
@@ -140,7 +140,7 @@ void MainWidget::timerEvent(QTimerEvent *) {
 }
 
 void MainWidget::keyPressEvent(QKeyEvent *event) {
-    /*
+
     switch(event->key()) {
         case Qt::Key_Z:
             camera.processKeyPress(Camera_Movement::Z);
@@ -160,7 +160,8 @@ void MainWidget::keyPressEvent(QKeyEvent *event) {
         case Qt::Key_W:
             camera.processKeyPress(Camera_Movement::W);
             break;
-    }*/
+    }
+    /*
     switch(event->key()) {
         case Qt::Key_Z:
             keys[0] = true;
@@ -177,7 +178,7 @@ void MainWidget::keyPressEvent(QKeyEvent *event) {
         case Qt::Key_Space:
             keys[4] = true;
             break;
-    }
+    }*/
 }
 
 void MainWidget::keyReleaseEvent(QKeyEvent *event) {
@@ -411,14 +412,14 @@ void MainWidget::paintGL()
    /* if(orbit) {
         camera.orbitAround(matrix, 1.0f , 0.0f);
     }*/
-    QVector4D modelFront = model->_transform.column(2).normalized();
+    camera.lookAt(matrix);
+    /*QVector4D modelFront = model->_transform.column(2).normalized();
     QVector4D modelUp = model->_transform.column(1).normalized();
     QVector4D modelPos = model->_transform.column(3);
     modelPos += modelUp * 0.5;
     modelPos -= modelFront * distancePlane;
     QVector3D target = QVector3D(modelPos.x(), modelPos.y(), modelPos.z()) + QVector3D(modelFront.x(), modelFront.y(), modelFront.z());
-    //camera.lookAt(matrix);
-    matrix.lookAt(QVector3D(modelPos.x(), modelPos.y(), modelPos.z()), target, QVector3D(modelUp.x(), modelUp.y(), modelUp.z()));
+    matrix.lookAt(QVector3D(modelPos.x(), modelPos.y(), modelPos.z()), target, QVector3D(modelUp.x(), modelUp.y(), modelUp.z()));*/
     //scene
     program.bind();
     program.setUniformValue("mvp_matrix", projection * matrix);
