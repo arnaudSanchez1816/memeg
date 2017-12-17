@@ -9,7 +9,8 @@
 
 typedef enum class ParticleType {
     Snow,
-    Rain
+    Rain,
+    Bullet
 } ParticleType;
 
 class Particle
@@ -23,6 +24,7 @@ public:
     QVector4D getColor();
     bool isAlive();
     static Particle generateNewParticle(int mapSize, ParticleType type);
+    static Particle generateBulletParticle(QVector3D pos);
 
 private:
     // _position: position of particle

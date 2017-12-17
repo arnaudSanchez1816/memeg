@@ -12,11 +12,13 @@ public:
     GameObject()
         : _transform() {}
 
-    void setOrigin(float x, float y, float z);
+    void translate(float x, float y, float z);
     void setScale(float x, float y, float z);
     void rotateX(float val);
     void rotateY(float val);
     void rotateZ(float val);
+
+    QVector3D getPos();
 };
 
 #endif // GAMEOBJECT_H

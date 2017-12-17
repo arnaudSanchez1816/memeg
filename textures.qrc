@@ -7,5 +7,9 @@
         <file>rock.jpg</file>
         <file>snow_rock.jpg</file>
         <file>snow_sand.jpg</file>
+        <file>snow_sand_n.png</file>
+        <file>snow_rock_n.png</file>
+        <file>sand_n.png</file>
+        <file>rock_n.png</file>
     </qresource>
 </RCC>

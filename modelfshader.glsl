@@ -5,6 +5,7 @@ struct DirLight {
 };
 uniform sampler2D texture_diffuse1;
 uniform sampler2D texture_specular1;
+uniform sampler2D texture_normal1;
 uniform DirLight dirLight;
 uniform vec3 viewpos;
 
@@ -31,4 +32,6 @@ void main()
     gl_FragColor = vec4(diffuse + specular, 1.0);
     //gl_FragColor = vec4(diffuse, 1.0);
     //gl_FragColor = vec4(specular, 1.0);
+    vec3 nn = texture2D(texture_normal1, TexCoords).rgb;
+    nn = normalize(nn * 2.0 - 1.0);
 }

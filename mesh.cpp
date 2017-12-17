@@ -3,6 +3,7 @@
 
 const std::string Mesh::DIFFUSE_MAP = "texture_diffuse";
 const std::string Mesh::SPECULAR_MAP = "texture_specular";
+const std::string Mesh::NORMAL_MAP = "texture_normal";
 
 Mesh::~Mesh()
 {
@@ -26,6 +27,10 @@ void Mesh::setupMesh(QOpenGLShaderProgram &_program) {
         int normalLocation = _program.attributeLocation("a_normal");
         _program.enableAttributeArray(normalLocation);
         _program.setAttributeBuffer(normalLocation, GL_FLOAT, (int) offsetof(Vertex, _normal), 3, sizeof(Vertex));
+        //vertex tangent
+        int tangentLocation = _program.attributeLocation("a_tangent");
+        _program.enableAttributeArray(tangentLocation);
+        _program.setAttributeBuffer(tangentLocation, GL_FLOAT, (int) offsetof(Vertex, _tangent), 3, sizeof(Vertex));
         //vertex texture coords
         int texcoordLocation = _program.attributeLocation("a_texcoord");
         _program.enableAttributeArray(texcoordLocation);
@@ -43,6 +48,10 @@ void Mesh::setupMesh(QOpenGLShaderProgram &_program) {
         int normalLocation = _program.attributeLocation("a_normal");
         _program.enableAttributeArray(normalLocation);
         _program.setAttributeBuffer(normalLocation, GL_FLOAT, (int) offsetof(Vertex, _normal), 3, sizeof(Vertex));
+        //vertex tangent
+        int tangentLocation = _program.attributeLocation("a_tangent");
+        _program.enableAttributeArray(tangentLocation);
+        _program.setAttributeBuffer(tangentLocation, GL_FLOAT, (int) offsetof(Vertex, _tangent), 3, sizeof(Vertex));
         //vertex texture coords
         int texcoordLocation = _program.attributeLocation("a_texcoord");
         _program.enableAttributeArray(texcoordLocation);
@@ -55,6 +64,7 @@ void Mesh::draw(QOpenGLShaderProgram &_program) {
     if(_indices.size() > 0) {
         unsigned int diffuseNr = 1;
         unsigned int specularNr = 1;
+        unsigned int normalNr = 1;
         int i = 0;
         vao.bind();
         for(auto t = _textures.begin(); t != _textures.end(); ++t, ++i) {
@@ -64,6 +74,8 @@ void Mesh::draw(QOpenGLShaderProgram &_program) {
                 number = std::to_string(diffuseNr++);
             } else if(name == SPECULAR_MAP) {
                 number = std::to_string(specularNr++);
+            } else if(name == NORMAL_MAP) {
+                number = std::to_string(normalNr++);
             }
             t->texture->bind(t->id);
             std::string v = name + number;
@@ -78,6 +90,7 @@ void Mesh::draw(QOpenGLShaderProgram &_program) {
     } else {
         unsigned int diffuseNr = 1;
         unsigned int specularNr = 1;
+        unsigned int normalNr = 1;
         int i = 0;
         vao.bind();
         for(auto t = _textures.begin(); t != _textures.end(); ++t, ++i) {
@@ -87,6 +100,8 @@ void Mesh::draw(QOpenGLShaderProgram &_program) {
                 number = std::to_string(diffuseNr++);
             } else if(name == SPECULAR_MAP) {
                 number = std::to_string(specularNr++);
+            } else if(name == NORMAL_MAP) {
+                number = std::to_string(normalNr++);
             }
             t->texture->bind(t->id);
             std::string v = name + number;

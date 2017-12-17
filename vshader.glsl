@@ -1,7 +1,6 @@
 #version 330 core
 uniform mat4 mvp_matrix;
 uniform sampler2D height_map;
-uniform sampler2D noise_map;
 uniform float sizeV;
 uniform float iTime;
 
@@ -15,12 +14,12 @@ varying vec3 lightVector;
 
 void main()
 {
-    vec4 a_height = vec4(a_position.x, (texture2D(height_map, a_texcoord).r) * (sizeV / 50.0), a_position.z, 1.0);
+    vec4 a_height = vec4(a_position.x, (texture2D(height_map, a_texcoord).r) * (sizeV / 35.0), a_position.z, 1.0);
     //calcul normal
-    float up = texture2D(height_map, a_texcoord - vec2(0.0, 1.0 / sizeV)).r * 5.0;
-    float down = texture2D(height_map, a_texcoord + vec2(0.0, 1.0 / sizeV)).r * 5.0;
-    float left = texture2D(height_map, a_texcoord - vec2(1.0 / sizeV, 0.0)).r * 5.0;
-    float right = texture2D(height_map, a_texcoord + vec2(1.0 / sizeV, 0.0)).r * 5.0;
+    float up = texture2D(height_map, a_texcoord - vec2(0.0, 1.0 / sizeV)).r * (sizeV / 50.0);
+    float down = texture2D(height_map, a_texcoord + vec2(0.0, 1.0 / sizeV)).r * (sizeV / 50.0);
+    float left = texture2D(height_map, a_texcoord - vec2(1.0 / sizeV, 0.0)).r * (sizeV / 50.0);
+    float right = texture2D(height_map, a_texcoord + vec2(1.0 / sizeV, 0.0)).r * (sizeV / 50.0);
     normal.x = left - right;
     normal.y = 2.0;
     normal.z = down - up;
@@ -30,4 +29,5 @@ void main()
     pos = a_height.xyz;
 
     gl_Position = mvp_matrix * a_height;
+    //gl_Position = mvp_matrix * vec4(a_position, 1.0);
 }

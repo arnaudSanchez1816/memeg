@@ -7,14 +7,14 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
-#include <QOpenGLFunctions>
+#include <QOpenGLFunctions_4_2_Core>
 #include <assimp/Importer.hpp>
 #include <QOpenGLTexture>
 #include <memory>
 
 struct Vertex {
     QVector3D _position;
-    QVector3D _normal;
+    QVector3D _normal, _tangent;
     QVector2D _texCoords;
 };
 
@@ -26,11 +26,12 @@ struct Texture {
     aiString path;
 };
 
-class Mesh : protected QOpenGLFunctions
+class Mesh : protected QOpenGLFunctions_4_2_Core
 {
 public:
     const static std::string DIFFUSE_MAP;
     const static std::string SPECULAR_MAP;
+    const static std::string NORMAL_MAP;
 
     std::vector<Vertex> _vertices;
     std::vector<unsigned int> _indices;

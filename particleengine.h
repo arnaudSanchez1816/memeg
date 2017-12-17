@@ -1,7 +1,7 @@
 #ifndef PARTICLEENGINE_H
 #define PARTICLEENGINE_H
 
-#include <QOpenGLFunctions>
+#include <QOpenGLFunctions_4_2_Core>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLBuffer>
 #include <vector>
@@ -18,7 +18,7 @@ struct ParticleData {
     {}
 };
 
-class ParticleEngine : QOpenGLFunctions
+class ParticleEngine : QOpenGLFunctions_4_2_Core
 {
 public:
     ParticleEngine(ParticleType t);
@@ -27,6 +27,7 @@ public:
     void drawParticles(QOpenGLShaderProgram *program);
     void updateParticles();
     void generateParticles(int mapSize, float seuilGeneration);
+    void generateParticles(QVector3D pos, float maxPerSeconde);
     int findUnusedParticles();
     void setParticleType(ParticleType t);
 

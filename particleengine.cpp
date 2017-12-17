@@ -1,5 +1,6 @@
 #include "particleengine.h"
 #include <iostream>
+#include "mainwidget.h"
 
 ParticleEngine::ParticleEngine(ParticleType t)
     : particlesData()
@@ -45,20 +46,25 @@ void ParticleEngine::drawParticles(QOpenGLShaderProgram *program) {
 }
 
 void ParticleEngine::generateParticles(int mapSize, float maxPerSeconde) {
-    double delta = 0.01;
-    if(lastTime == 0) {
-        lastTime = QTime::currentTime().msecsSinceStartOfDay();
-    } else {
-        delta = QTime::currentTime().msecsSinceStartOfDay() - lastTime ;
-        lastTime = QTime::currentTime().msecsSinceStartOfDay();
-    }
-    int newParticles = (int) (delta * maxPerSeconde);
+    int newParticles = (int) (MainWidget::deltaTime * maxPerSeconde);
     if(newParticles > (int) (0.016f * maxPerSeconde)) {
         newParticles = (int) (0.016f * maxPerSeconde);
     }
     for(int i = 0; i < newParticles; ++i) {
         int index = findUnusedParticles();
         particleContainer[index] = Particle::generateNewParticle(mapSize, type);
+        particlesData.emplace_back(particleContainer[index].getPosSize(), particleContainer[index].getColor());
+    }
+}
+
+void ParticleEngine::generateParticles(QVector3D pos, float maxPerSeconde) {
+    int newParticles = (int) (MainWidget::deltaTime * maxPerSeconde);
+    if(newParticles > (int) (0.016f * maxPerSeconde)) {
+        newParticles = (int) (0.016f * maxPerSeconde);
+    }
+    for(int i = 0; i < newParticles; ++i) {
+        int index = findUnusedParticles();
+        particleContainer[index] = Particle::generateBulletParticle(pos);
         particlesData.emplace_back(particleContainer[index].getPosSize(), particleContainer[index].getColor());
     }
 }

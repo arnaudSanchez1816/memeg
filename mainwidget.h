@@ -59,7 +59,7 @@
 #include "light.h"
 
 #include <QOpenGLWidget>
-#include <QOpenGLFunctions>
+#include <QOpenGLFunctions_4_2_Core>
 #include <QMatrix4x4>
 #include <QQuaternion>
 #include <QVector2D>
@@ -68,16 +68,18 @@
 #include <QElapsedTimer>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLTexture>
+#include <vector>
 
 #define CALENDAR_TIME 10000
 
 class GeometryEngine;
 
-class MainWidget : public QOpenGLWidget, protected QOpenGLFunctions
+class MainWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_2_Core
 {
     Q_OBJECT
 
 public:
+    static float deltaTime, lastFrame;
     explicit MainWidget(int msFPS, Seasons s = Seasons::Summer, QWidget *parent = 0);
     ~MainWidget();
 
@@ -87,6 +89,7 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
     void timerEvent(QTimerEvent *e) override;
     void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
 
     void initializeGL() override;
@@ -106,13 +109,14 @@ private:
     QVector2D mousePressPosition;
     int fov, fps;
     SeasonManager *seasonM;
-    ParticleEngine *particleEngineSnow, *particleEngineRain;
+    ParticleEngine *particleEngineSnow, *particleEngineRain, *particleEngineBullet;
     QVector3D lightPos;
     Model *model;
     Terrain *terrain;
     QOpenGLShaderProgram program, particlesProgram, modelProgram, sbProgram;
     Mesh *cubeMap;
     QOpenGLTexture *skyboxTexture;
+    std::vector<bool> keys;//0 Z, 1 Q, 2 S, 3 D, 4 Space
     /*
     const std::vector<std::string> sbFaces { //skybox2
         "assets/skybox2/right.jpg",

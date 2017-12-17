@@ -1,10 +1,10 @@
-QT       += core gui widgets
+QT += core gui widgets multimedia multimediawidgets
 
 TARGET = plane
 TEMPLATE = app
 
 INCLUDEPATH += $$PWD/external/include
-LIBS += -L$$PWD/external/bin -L$$PWD/external/lib -lassimp
+LIBS += -L$$PWD/external/bin -L$$PWD/external/lib -lassimp -lnoise -lnoiseutils
 
 SOURCES += main.cpp \
     camera.cpp \

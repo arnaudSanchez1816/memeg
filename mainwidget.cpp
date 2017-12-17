@@ -53,7 +53,14 @@
 #include <QMouseEvent>
 #include <math.h>
 #include <iostream>
+#include <QtMultimedia/QSound>
 #include "utils.h"
+
+float MainWidget::deltaTime = 0.0;
+float MainWidget::lastFrame = 0.0;
+QSound gunSound("assets/sound/cg1.wav");
+
+float distancePlane = 2.0;
 
 MainWidget::MainWidget(int fps, Seasons s, QWidget *parent) :
     QOpenGLWidget(parent),
@@ -64,7 +71,8 @@ MainWidget::MainWidget(int fps, Seasons s, QWidget *parent) :
     fps(fps),
     skyboxTexture(nullptr),
     particleEngineSnow(nullptr),
-    particleEngineRain(nullptr)
+    particleEngineRain(nullptr),
+    keys(5, false)
 {
     setMouseTracking(true);
     seasonTimer = new QTimer();
@@ -87,28 +95,52 @@ MainWidget::~MainWidget()
     doneCurrent();
 }
 
-void MainWidget::mousePressEvent(QMouseEvent *e)
-{
+void MainWidget::mousePressEvent(QMouseEvent *e) {
     // Save mouse press position
-    mousePressPosition = QVector2D(e->localPos());
+    //mousePressPosition = QVector2D(e->localPos());
 }
 
-void MainWidget::mouseReleaseEvent(QMouseEvent *e)
-{
+void MainWidget::mouseReleaseEvent(QMouseEvent *e) {
     if(e->button() == Qt::RightButton) {
         orbit = !orbit;
     }
 }
 
 void MainWidget::wheelEvent(QWheelEvent *event) {
+    int numDegrees = event->delta() / 8;
+    float numSteps = numDegrees / 100.0;
+    if (event->delta() > 0.0) {
+        if(distancePlane > 1.0)
+            distancePlane -= numSteps;
+    } else {
+        if(distancePlane < 4.0)
+            distancePlane -= numSteps;
+    }
+    event->accept();
 }
 
-void MainWidget::timerEvent(QTimerEvent *)
-{
+void MainWidget::timerEvent(QTimerEvent *) {
     update();
+    //move
+    float sensi = 0.03 * deltaTime;
+        if(keys[0]) {
+            model->translate(0.0, sensi, 0.0);
+        }
+        if(keys[1]) {
+            model->translate(sensi, 0.0, 0.0);
+        }
+        if(keys[2])
+            model->translate(0.0, -sensi, 0.0);
+        if(keys[3])
+            model->translate(-sensi, 0.0, 0.0);
+        if(keys[4]) {
+            particleEngineBullet->generateParticles(model->getPos(), 65.0);
+            //gunSound.play();
+        }
 }
 
 void MainWidget::keyPressEvent(QKeyEvent *event) {
+    /*
     switch(event->key()) {
         case Qt::Key_Z:
             camera.processKeyPress(Camera_Movement::Z);
@@ -128,6 +160,43 @@ void MainWidget::keyPressEvent(QKeyEvent *event) {
         case Qt::Key_W:
             camera.processKeyPress(Camera_Movement::W);
             break;
+    }*/
+    switch(event->key()) {
+        case Qt::Key_Z:
+            keys[0] = true;
+            break;
+        case Qt::Key_Q:
+            keys[1] = true;
+            break;
+        case Qt::Key_S:
+            keys[2] = true;
+            break;
+        case Qt::Key_D:
+            keys[3] = true;
+            break;
+        case Qt::Key_Space:
+            keys[4] = true;
+            break;
+    }
+}
+
+void MainWidget::keyReleaseEvent(QKeyEvent *event) {
+    switch(event->key()) {
+        case Qt::Key_Z:
+            keys[0] = false;
+            break;
+        case Qt::Key_Q:
+            keys[1] = false;
+            break;
+        case Qt::Key_S:
+            keys[2] = false;
+            break;
+        case Qt::Key_D:
+            keys[3] = false;
+            break;
+        case Qt::Key_Space:
+            keys[4] = false;;
+            break;
     }
 }
 
@@ -143,11 +212,9 @@ void MainWidget::mouseMoveEvent(QMouseEvent *event) {
 void MainWidget::initializeGL()
 {
     initializeOpenGLFunctions();
-
     glClearColor(0, 0, 0, 1);
     initShaders();
     initTextures();
-
     // Enable depth buffer
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
@@ -155,14 +222,15 @@ void MainWidget::initializeGL()
     // Enable back face culling
     //glEnable(GL_CULL_FACE);
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    terrain = new Terrain(100, 400, program);
+    terrain = new Terrain(200, 400, program);
     particleEngineRain = new ParticleEngine(ParticleType::Rain);
     particleEngineSnow = new ParticleEngine(ParticleType::Snow);
-    model = new Model("assets/nanosuit/nanosuit.obj", &modelProgram);
-    //model = new Model("assets/ship/SciFi_Fighter_AK5.obj", &modelProgram);
-    //model = new Model("assets/plane/Wraith Raider Starship.obj", &modelProgram);
-    //model->setScale(0.001, 0.001, 0.001);
-    //model->rotateY(-90);
+    particleEngineBullet = new ParticleEngine(ParticleType::Bullet);
+    //model = new Model("assets/nanosuit/nanosuit.obj", &modelProgram);
+    //model = new Model("assets/jet/F-15C_Eagle.3ds", &modelProgram);
+    model = new Model("assets/jet/jet.3ds", &modelProgram);
+    model->translate(50, 15, 10);
+    model->setScale(0.5, 0.5, 0.5);
     // Use QBasicTimer because its faster than QTimer
     timer.start(1000/fps, this);
 }
@@ -240,9 +308,7 @@ void MainWidget::loadCubeMap() {
         }
         if (data) {
             QOpenGLTexture::CubeMapFace cbf = (QOpenGLTexture::CubeMapFace) (GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
-            skyboxTexture->setData(0, 0, cbf,
-                                    QOpenGLTexture::RGBA, QOpenGLTexture::UInt8,
-                                    (const void*)data, 0);
+            skyboxTexture->setData(0, 0, cbf, QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, (const void*)data, 0);
         }
         else {
             std::cout << "Cubemap texture failed to load at path: " << sbFaces[i] << std::endl;
@@ -322,13 +388,17 @@ void MainWidget::resizeGL(int w, int h)
 
 void MainWidget::paintGL()
 {
+    //delta time
+    float currentFrame = QTime::currentTime().msecsSinceStartOfDay();
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
     Light dirLight(QVector3D(0.5, -0.4, -0.2));
-    auto lerp = [] (QColor &&a, QColor &&b, float step) {
+    /*auto lerp = [] (QColor &&a, QColor &&b, float step) {
         float h = a.redF() * (1.0 - step) + b.redF() * step;
         float s = a.greenF() * (1.0 - step) + b.greenF() * step;
         float v = a.blueF() * (1.0 - step) + b.blueF() * step;
         return QColor::fromRgbF(h, s, v);
-    };
+    };*/
     //QColor color = LerpHSV(seasonM->getCurrentSeasonColor().toHsv(), seasonM->getNextSeasonColor().toHsv(), 1.0 - (seasonTimer->remainingTime() /(float) CALENDAR_TIME));
     //QColor color = lerp(seasonM->getCurrentSeasonColor(), seasonM->getNextSeasonColor(),1.0 - (seasonTimer->remainingTime() / (float) CALENDAR_TIME));
     //dirLight._diffuse = QVector3D(color.redF(), color.greenF(), color.blueF()).normalized(); //lol
@@ -338,10 +408,17 @@ void MainWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Calculate model view transformation
     QMatrix4x4 matrix;
-    if(orbit) {
+   /* if(orbit) {
         camera.orbitAround(matrix, 1.0f , 0.0f);
-    }
-    camera.lookAt(matrix);
+    }*/
+    QVector4D modelFront = model->_transform.column(2).normalized();
+    QVector4D modelUp = model->_transform.column(1).normalized();
+    QVector4D modelPos = model->_transform.column(3);
+    modelPos += modelUp * 0.5;
+    modelPos -= modelFront * distancePlane;
+    QVector3D target = QVector3D(modelPos.x(), modelPos.y(), modelPos.z()) + QVector3D(modelFront.x(), modelFront.y(), modelFront.z());
+    //camera.lookAt(matrix);
+    matrix.lookAt(QVector3D(modelPos.x(), modelPos.y(), modelPos.z()), target, QVector3D(modelUp.x(), modelUp.y(), modelUp.z()));
     //scene
     program.bind();
     program.setUniformValue("mvp_matrix", projection * matrix);
@@ -379,6 +456,16 @@ void MainWidget::paintGL()
     modelProgram.setUniformValue("dirLight.diffuse", dirLight._diffuse);
     modelProgram.setUniformValue("dirLight.specular", dirLight._specular);
     model->draw();
+    //bullets
+    particlesProgram.bind();
+    height->bind(0);
+    particlesProgram.setUniformValue("height_map", 0);
+    particlesProgram.setUniformValue("mvp_matrix", projection * matrix);
+    particlesProgram.setUniformValue("map_size", terrain->getSize());
+    ParticleEngine &pe = *particleEngineBullet;
+    pe.updateParticles();
+    pe.drawParticles(&particlesProgram);
+    height->release();
     //skybox
     glDepthFunc(GL_LEQUAL);
     sbProgram.bind();
@@ -388,5 +475,6 @@ void MainWidget::paintGL()
     sbProgram.setUniformValue("mvp_matrix", projection * view);
     sbProgram.setUniformValue("skybox", 0);
     cubeMap->draw(sbProgram);
+    skyboxTexture->release();
     glDepthFunc(GL_LESS);
 }

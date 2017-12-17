@@ -1,9 +1,10 @@
 #include "camera.h"
 #include <QtMath>
 #include <iostream>
+#include "mainwidget.h"
 
 void Camera::processKeyPress(Camera_Movement movement) {
-    float cameraSpeed = 0.3f;
+    float cameraSpeed = 0.03f * MainWidget::deltaTime;
     if(movement == Camera_Movement::Z) {
         cameraPos += cameraSpeed * cameraFront;
     }
@@ -25,7 +26,7 @@ void Camera::processKeyPress(Camera_Movement movement) {
 }
 
 void Camera::processMouseMovement(float xoffset, float yoffset) {
-    float mouseSensitivity = 0.2f;
+    float mouseSensitivity = 0.01f * MainWidget::deltaTime;
     xoffset *= mouseSensitivity;
     yoffset *= mouseSensitivity;
 
@@ -67,7 +68,6 @@ void Camera::orbitAround(QMatrix4x4 &matrix, float y, float p) {
     cameraPos += QVector3D::crossProduct(cameraFront,cameraUp).normalized() * 0.1f;
     processMouseMovement(-5.0f, 0.0f);
     updateCameraVectors();
-
     //a debug
 /*
     matrix.rotate(p, cameraRight.normalized());

@@ -1,6 +1,6 @@
 #include "particle.h"
 #include <iostream>
-#include "geometryengine.h"
+#include "mainwidget.h"
 
 Particle::Particle()
     : _position(QVector3D(0.0f, 0.0f, 0.0f))
@@ -32,16 +32,9 @@ Particle::Particle(QVector3D pos, QVector4D color, float theta, float phi, float
 }
 
 void Particle::update() {
-    double delta = 0;
-    if(lastTime == 0) {
-        lastTime = QTime::currentTime().msecsSinceStartOfDay();
-    } else {
-        delta = QTime::currentTime().msecsSinceStartOfDay() - lastTime ;
-        lastTime = QTime::currentTime().msecsSinceStartOfDay();
-    }
-    _life -= delta;
+    _life -= MainWidget::deltaTime;
     if(_life > 0) {
-        _position += (_velocity * (delta / 1000.0f));
+        _position += (_velocity * (MainWidget::deltaTime / 1000.0f));
         if(_position.y() <= 0.0f) {
             _life = 0;
         }
@@ -85,8 +78,8 @@ Particle Particle::generateSnowParticle(int mapSize) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> disXZ(0.0, (float) mapSize);
-    std::uniform_real_distribution<> disY(8.0, 13.0);
-    std::uniform_real_distribution<> disSp(2.0, 2.5);
+    std::uniform_real_distribution<> disY(35.0, 48.0);
+    std::uniform_real_distribution<> disSp(8.0, 12.0);
     std::uniform_int_distribution<> disPhi(160, 170);
     std::uniform_real_distribution<> disSi(3.0f, 4.0f);
     return Particle(QVector3D(disXZ(gen), disY(gen), disXZ(gen))
@@ -94,7 +87,7 @@ Particle Particle::generateSnowParticle(int mapSize) {
                     , 0.0f
                     , disPhi(gen)
                     , disSp(gen)
-                    , 6000
+                    , 10000
                     , disSi(gen));
 }
 
@@ -102,8 +95,8 @@ Particle Particle::generateRainParticle(int mapSize) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> disXZ(0.0, (float) mapSize);
-    std::uniform_real_distribution<> disY(8.0, 13.0);
-    std::uniform_real_distribution<> disSp(10.0, 12.0);
+    std::uniform_real_distribution<> disY(40.0, 55.0);
+    std::uniform_real_distribution<> disSp(20.0, 25.0);
     std::uniform_int_distribution<> disPhi(170, 175);
     std::uniform_real_distribution<> disSi(2.0f, 2.0f);
     return Particle(QVector3D(disXZ(gen), disY(gen), disXZ(gen))
@@ -111,6 +104,16 @@ Particle Particle::generateRainParticle(int mapSize) {
                     , 0.0f
                     , disPhi(gen)
                     , disSp(gen)
-                    , 3000
+                    , 4000
                     , disSi(gen));
+}
+
+Particle Particle::generateBulletParticle(QVector3D pos) {
+    return Particle(pos
+                    , QVector4D(1.0f, 1.0f, 0.2f, 1.0f)
+                    , 90.0f
+                    , 90
+                    , 30
+                    , 500
+                    , 2.0f);
 }
