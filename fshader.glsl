@@ -39,8 +39,8 @@ void main()
     vec3 lightVector = normalize(-dirLight.sunDirection);
     vec3 viewDir = normalize(viewpos - pos);
     setTextures(t);
-    float rockH = 2.0f;
-    float sandH = 0.8f;
+    float rockH = 3.0f;
+    float sandH = 2.0f;
     // Set fragment color from texture
     vec3 diffuse, specular, nm;
     if(pos.y > rockH) {

@@ -82,13 +82,32 @@ int Terrain::getSizeV() {
 }
 
 void Terrain::generateTerrain(std::vector<Texture> &textures, int &cptId) {
-    module::Perlin generator;
-    generator.SetOctaveCount(6);
-    generator.SetFrequency(2);
-    generator.SetPersistence(0.4);
+    //https://www.redblobgames.com/maps/terrain-from-noise/
+    //http://libnoise.sourceforge.net/tutorials/tutorial3.html
+    module::RidgedMulti mountainTerrain;
+    module::Billow baseFlatTerrain;
+    module::ScaleBias flatTerrain;
+    module::Perlin terrainType;
+    module::Select terrainSelector;
+    module::Turbulence finalTerrain;
+    mountainTerrain.SetOctaveCount(4);
+    baseFlatTerrain.SetFrequency(2.0);
+    flatTerrain.SetSourceModule(0, baseFlatTerrain);
+    flatTerrain.SetScale(0.125);
+    flatTerrain.SetBias(-0.75);
+    terrainType.SetFrequency(0.5);
+    terrainType.SetPersistence(0.25);
+    terrainSelector.SetSourceModule (0, flatTerrain);
+    terrainSelector.SetSourceModule (1, mountainTerrain);
+    terrainSelector.SetControlModule(terrainType);
+    terrainSelector.SetBounds (0.0, 1000.0);
+    terrainSelector.SetEdgeFalloff (0.2);
+    finalTerrain.SetSourceModule (0, terrainSelector);
+    finalTerrain.SetFrequency (2.0);
+    finalTerrain.SetPower (0.25);
     utils::NoiseMap heightMap;
     utils::NoiseMapBuilderPlane heightMapBuilder;
-    heightMapBuilder.SetSourceModule(generator);
+    heightMapBuilder.SetSourceModule(finalTerrain);
     heightMapBuilder.SetDestNoiseMap(heightMap);
     heightMapBuilder.SetDestSize(256, 256);
     heightMapBuilder.SetBounds(10.0,15.0, 20.0, 30.0);

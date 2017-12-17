@@ -14,7 +14,7 @@ varying vec3 lightVector;
 
 void main()
 {
-    vec4 a_height = vec4(a_position.x, (texture2D(height_map, a_texcoord).r) * (sizeV / 35.0), a_position.z, 1.0);
+    vec4 a_height = vec4(a_position.x, (texture2D(height_map, a_texcoord).r) * (sizeV / 30.0), a_position.z, 1.0);
     //calcul normal
     float up = texture2D(height_map, a_texcoord - vec2(0.0, 1.0 / sizeV)).r * (sizeV / 50.0);
     float down = texture2D(height_map, a_texcoord + vec2(0.0, 1.0 / sizeV)).r * (sizeV / 50.0);
