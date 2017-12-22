@@ -4,34 +4,36 @@
 #include "mainwidget.h"
 
 void Camera::processKeyPress(Camera_Movement movement) {
-    float cameraSpeed = 0.03f * MainWidget::deltaTime;
+    float cameraSpeed = 30.0f * MainWidget::deltaTime;
+    QVector3D cameraPos = this->getPos();
     if(movement == Camera_Movement::Z) {
-        cameraPos += cameraSpeed * cameraFront;
+        cameraPos += cameraSpeed * getFront();
     }
     if(movement == Camera_Movement::S) {
-        cameraPos -= cameraSpeed * cameraFront;
+        cameraPos -= cameraSpeed * getFront();
     }
     if(movement == Camera_Movement::Q) {
-        cameraPos -= QVector3D::crossProduct(cameraFront,cameraUp).normalized() * cameraSpeed;
+        cameraPos -= QVector3D::crossProduct(getFront(),getUp()).normalized() * cameraSpeed;
     }
     if(movement == Camera_Movement::D) {
-        cameraPos += QVector3D::crossProduct(cameraFront,cameraUp).normalized() * cameraSpeed;
+        cameraPos += QVector3D::crossProduct(getFront(),getUp()).normalized() * cameraSpeed;
     }
     if(movement == Camera_Movement::C) {
-        cameraPos += cameraSpeed * cameraUp;
+        cameraPos += cameraSpeed * getUp();
     }
     if(movement == Camera_Movement::W) {
-        cameraPos -= cameraSpeed * cameraUp;
+        cameraPos -= cameraSpeed * getUp();
     }
+    translate(cameraPos.x(), cameraPos.y(), cameraPos.z());
 }
 
 void Camera::processMouseMovement(float xoffset, float yoffset) {
-    float mouseSensitivity = 0.01f * MainWidget::deltaTime;
+    float mouseSensitivity = 10.0f * MainWidget::deltaTime;
     xoffset *= mouseSensitivity;
     yoffset *= mouseSensitivity;
 
-    yaw += xoffset;
-    pitch += yoffset;
+    float yaw = _rotY - xoffset;
+    float pitch = _rotX - yoffset;
 
     if(pitch > 89.0f) {
         pitch = 89.0f;
@@ -39,51 +41,19 @@ void Camera::processMouseMovement(float xoffset, float yoffset) {
     if(pitch < -89.0f) {
         pitch = -89.0f;
     }
-    updateCameraVectors();
+    rotateY(yaw);
+    rotateX(pitch);
 }
 
 void Camera::lookAt(QMatrix4x4 &matrix) {
-    target = cameraPos + cameraFront;
-    matrix.lookAt(cameraPos, target, cameraUp);
-}
-
-QVector3D Camera::getFront() {
-    return cameraFront;
+    QVector3D target = getPos() + getFront();
+    matrix.lookAt(getPos(), target, getUp());
 }
 
 QVector3D Camera::getWorldUp() {
     return worldUp;
 }
 
-QVector3D Camera::getRight() {
-    return cameraRight;
-}
-
-QVector3D Camera::getPos() {
-    return cameraPos;
-}
-
-void Camera::orbitAround(QMatrix4x4 &matrix, float y, float p) {
-
-    cameraPos += QVector3D::crossProduct(cameraFront,cameraUp).normalized() * 0.1f;
-    processMouseMovement(-5.0f, 0.0f);
-    updateCameraVectors();
-    //a debug
-/*
-    matrix.rotate(p, cameraRight.normalized());
-    cameraPos = (matrix * (cameraPos - target)) + target;
-    matrix.rotate(y, cameraUp.normalized());
-    cameraPos = (matrix * (cameraPos - target)) + target;
-    matrix.lookAt(cameraPos, target, cameraUp);
-*/
-}
-
-void Camera::updateCameraVectors() {
-    QVector3D front;
-    front.setX( cos(qDegreesToRadians(yaw)) * cos(qDegreesToRadians(pitch)));
-    front.setY(sin(qDegreesToRadians(pitch)));
-    front.setZ(sin(qDegreesToRadians(yaw)) * cos(qDegreesToRadians(pitch)));
-    cameraFront = front.normalized();
-    cameraRight = QVector3D::crossProduct(cameraFront, worldUp).normalized();
-    cameraUp = QVector3D::crossProduct(cameraRight, cameraFront).normalized();
+void Camera::draw(Renderer &renderer) {
+    drawChild(renderer);
 }

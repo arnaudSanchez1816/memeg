@@ -36,6 +36,7 @@ public:
     std::vector<Vertex> _vertices;
     std::vector<unsigned int> _indices;
     std::vector<Texture> _textures;
+    std::vector<QVector3D> _collisionBox;
 
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures, QOpenGLShaderProgram &program)
         : _vertices(vertices), _indices(indices), _textures(textures), arrayBuf(QOpenGLBuffer::VertexBuffer), indexBuf(QOpenGLBuffer::IndexBuffer)
@@ -45,8 +46,29 @@ public:
         arrayBuf.create();
         indexBuf.create();
         setupMesh(program);
+        /*
+        //collision box
+        float minX = 0, minY = 0, minZ = 0;
+        float maxX =  0, maxY = 0, maxZ = 0;
+        for(int i = 0; i < _vertices.size(); ++i){
+            const QVector3D &pos = _vertices[i]._position;
+            minX = std::min(pos.x(), minX);
+            minY = std::min(pos.y(), minY);
+            minZ = std::min(pos.z(), minZ);
+
+            maxX = std::max(pos.x(), maxX);
+            maxY = std::max(pos.y(), maxY);
+            maxZ = std::max(pos.z(), maxZ);
+        }
+        QVector3D min(minX, minY, minZ);
+        QVector3D max(maxX, maxY, maxZ);
+
+        _collisionBox.push_back(min);
+        _collisionBox.push_back(max);
+        */
     }
     void draw(QOpenGLShaderProgram &_program);
+    //bool collide(Mesh &m);
     virtual ~Mesh();
 
 private:

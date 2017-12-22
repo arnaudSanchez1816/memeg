@@ -16,7 +16,11 @@ SOURCES += main.cpp \
     model.cpp \
     gameobject.cpp \
     terrain.cpp \
-    light.cpp
+    light.cpp \
+    scene.cpp \
+    skybox.cpp \
+    renderer.cpp \
+    gamecontroller.cpp
 
 SOURCES += \
     mainwidget.cpp
@@ -32,7 +36,11 @@ HEADERS += \
     model.h \
     gameobject.h \
     terrain.h \
-    light.h
+    light.h \
+    scene.h \
+    skybox.h \
+    renderer.h \
+    gamecontroller.h
 
 RESOURCES += \
     shaders.qrc \

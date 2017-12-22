@@ -7,50 +7,58 @@
 #include <map>
 #include <QOpenGLShaderProgram>
 #include <noise/noise.h>
+#include <QTimer>
 #include "gameobject.h"
 #include "mesh.h"
+#include "seasonmanager.h"
+#include "particleengine.h"
 
 class Chunk : public GameObject
 {
 public:
-    Chunk(std::vector<Texture> &textures, QOpenGLShaderProgram &program);
-    Chunk(int size, int nbV, int startX, int startZ,int decalage, std::vector<Texture> &textures, QOpenGLShaderProgram &program);
+    Chunk(std::vector<Texture> &textures, QOpenGLShaderProgram &program, QOpenGLShaderProgram &particlesProgram);
+    Chunk(int size, int nbV, int startX, int startZ,int decalage, std::vector<Texture> &textures, QOpenGLShaderProgram &program, QOpenGLShaderProgram &particlesProgram);
 
-    void draw(QOpenGLShaderProgram &program, int winter);
     int getSize();
     int getSizeV();
+    void draw(Renderer &renderer) override;
+    void setInitPos(float x, float y, float z);
+
 private:
     std::unique_ptr<Mesh> _mesh;
+    QOpenGLShaderProgram &_program;
+    ParticleEngine _pEngine;
     int sizeV, size, decalage, startX, startZ;
+    QVector3D initPos;
 
-    void generateTerrain(std::vector<Texture> &textures, int cptId);
+    void generateTerrain(std::vector<Texture> &textures);
 };
 
-#endif // TERRAIN_H
-
-class Terrain{
+class Terrain : public GameObject {
 public:
-    Terrain(int chunkSize, int chunkNbV, QOpenGLShaderProgram &program)
-        : _chunkSize(chunkSize), _chunkNbV(chunkNbV), _boxDecalage(5), _startX(10), _startZ(20)
+    Terrain(int chunkSize, int chunkNbV, QOpenGLShaderProgram &program, QOpenGLShaderProgram &particlesProgram)
+        : _chunkSize(chunkSize), _chunkNbV(chunkNbV), _boxDecalage(5), _startX(10), _startZ(20), _program(program), _pProgram(particlesProgram)
     {
         textures = loadTextures();
-        _chunks.emplace_back(_chunkSize, _chunkNbV, _startX, _startZ, _boxDecalage, textures,program);
-        _startZ += _boxDecalage;
-        _chunks.emplace_back(_chunkSize, _chunkNbV, _startX, _startZ, _boxDecalage, textures,program);
-        Chunk &c = _chunks.back();
-        float transla = ((chunkNbV - 1.0) /(float) chunkNbV) * (float) chunkSize;
-        c.translate(0.0f, 0.0f, chunkSize);
+        seasonM = new SeasonManager(Seasons::Summer);
+        seasonTimer.connect(&seasonTimer, SIGNAL(timeout()), seasonM, SLOT(changeSeason()));
+        seasonTimer.start(SEASON_DURATION);
     }
 
-    void draw(QOpenGLShaderProgram &program, int winter = 0);
+    void draw(Renderer &renderer) override;
     int getSize();
     int getSizeV();
+    void addChunk(float _x, float _y, float _z);
+    void moveTerrain();
 private:
     std::list<Chunk> _chunks;
     std::vector<Texture> textures;
+    QOpenGLShaderProgram &_program, &_pProgram;
     int _chunkSize, _chunkNbV;
     int _boxDecalage;
     int _startX, _startZ;
+    QTimer seasonTimer;
+    SeasonManager *seasonM;
     const std::map<std::string, std::string> texturesPath{
         //{":/heightmap-1.png", "height_map"},
         {":/sand.jpg", "sand"},
@@ -63,6 +71,7 @@ private:
         {":/snow_sand_n.png", "winter_sand_n"},
     };
 
-
     std::vector<Texture> loadTextures();
 };
+
+#endif // TERRAIN_H

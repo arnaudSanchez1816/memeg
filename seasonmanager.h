@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QColor>
 
+#define SEASON_DURATION 15000
+
 typedef enum class Seasons {
     Summer,
     Autumn,

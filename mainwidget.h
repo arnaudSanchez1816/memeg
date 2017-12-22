@@ -52,25 +52,24 @@
 #define MAINWIDGET_H
 
 #include "camera.h"
-#include "seasonmanager.h"
 #include "particleengine.h"
 #include "model.h"
 #include "terrain.h"
 #include "light.h"
+#include "renderer.h"
+#include "scene.h"
+#include "skybox.h"
+#include "gamecontroller.h"
 
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions_4_2_Core>
 #include <QMatrix4x4>
-#include <QQuaternion>
-#include <QVector2D>
+#include <QVector3D>
 #include <QTime>
 #include <QTimer>
 #include <QElapsedTimer>
 #include <QOpenGLShaderProgram>
-#include <QOpenGLTexture>
 #include <vector>
-
-#define CALENDAR_TIME 10000
 
 class GeometryEngine;
 
@@ -80,8 +79,10 @@ class MainWidget : public QOpenGLWidget, protected QOpenGLFunctions_4_2_Core
 
 public:
     static float deltaTime, lastFrame;
-    explicit MainWidget(int msFPS, Seasons s = Seasons::Summer, QWidget *parent = 0);
+    explicit MainWidget(int msFPS, QWidget *parent = 0);
     ~MainWidget();
+
+    void generateTorus();
 
 protected:
     void mousePressEvent(QMouseEvent *e) override;
@@ -97,44 +98,21 @@ protected:
     void paintGL() override;
 
     void initShaders();
-    void initTextures();
 
 private:
     QBasicTimer timer;
-    QTimer *seasonTimer;
-    QOpenGLTexture *height;
     QMatrix4x4 projection;
-    Camera camera;
+    GameController gc;
     bool orbit;
     QVector2D mousePressPosition;
     int fov, fps;
-    SeasonManager *seasonM;
-    ParticleEngine *particleEngineSnow, *particleEngineRain, *particleEngineBullet;
+    float torrusTime;
+    ParticleEngine *particleEngineBullet;
     QVector3D lightPos;
-    Model *model;
-    Terrain *terrain;
+    std::shared_ptr<GameObject> scene, model, jet, nano, skybox, terrain, camera;
     QOpenGLShaderProgram program, particlesProgram, modelProgram, sbProgram;
-    Mesh *cubeMap;
-    QOpenGLTexture *skyboxTexture;
     std::vector<bool> keys;//0 Z, 1 Q, 2 S, 3 D, 4 Space
-    /*
-    const std::vector<std::string> sbFaces { //skybox2
-        "assets/skybox2/right.jpg",
-        "assets/skybox2/left.jpg",
-        "assets/skybox2/top.jpg",
-        "assets/skybox2/bottom.jpg",
-        "assets/skybox2/back.jpg",
-        "assets/skybox2/front.jpg"
-    };*/
-    const std::vector<std::string> sbFaces { //skybox1
-        "assets/skybox/miramar_rt.jpg",
-        "assets/skybox/miramar_lf.jpg",
-        "assets/skybox/miramar_up.jpg",
-        "assets/skybox/miramar_dn.jpg",
-        "assets/skybox/miramar_bk.jpg",
-        "assets/skybox/miramar_ft.jpg"
-    };
-    void loadCubeMap();
+
 };
 
 #endif // MAINWIDGET_H

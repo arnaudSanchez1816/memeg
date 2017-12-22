@@ -1,6 +1,5 @@
 #include "scene.h"
 
-Scene::Scene()
-{
-
+void Scene::draw(Renderer &renderer) {
+    drawChild(renderer);
 }

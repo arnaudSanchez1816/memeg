@@ -2,14 +2,21 @@
 #include <iostream>
 #include <utility>
 
-unsigned int cptId = 0;
-
-void Model::draw() {
+void Model::draw(Renderer &renderer) {
+    _program->bind();
+    _program->setUniformValue("viewpos", renderer.camPos);
+    _program->setUniformValue("mvp_matrix", renderer._projection * renderer._view);
+    _program->setUniformValue("dirLight.sunDirection", renderer.light._pos);
+    _program->setUniformValue("dirLight.ambient", renderer.light._ambient);
+    _program->setUniformValue("dirLight.diffuse", renderer.light._diffuse);
+    _program->setUniformValue("dirLight.specular", renderer.light._specular);
     for(int i = 0; i < _meshes.size() ; ++i) {
         _program->setUniformValue("transform", _transform);
         _program->setUniformValue("normal_mat", _transform.normalMatrix());
         _meshes[i]->draw(*_program);
     }
+    _program->release();
+    drawChild(renderer);
 }
 
 void Model::loadModel(std::string path) {
@@ -102,7 +109,8 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType 
         tex->setMagnificationFilter(QOpenGLTexture::Linear);
         tex->setWrapMode(QOpenGLTexture::Repeat);
         _loadedTextures.push_back(tex);
-        texture.id = cptId++;
+        //texture.id = cptId++;
+        texture.id = tex->textureId();
         texture.path = str;
         texture.uniformName = "";
         texture.type = typeName;
@@ -111,3 +119,23 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType 
     }
     return textures;
 }
+/*
+bool Model::collide(Model &m) {
+    for(auto &me: _meshes) {
+        Mesh & mesh = *me;
+        if(m.collide(mesh)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Model::collide(Mesh &m) {
+    for(auto &me: _meshes) {
+        Mesh & mesh = *me;
+        if(mesh.collide(m)) {
+            return true;
+        }
+    }
+    return false;
+}*/

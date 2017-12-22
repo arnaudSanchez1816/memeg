@@ -32,12 +32,12 @@ void setTextures(inout texs t) {
     t.tRockN = winter > 0 ? winter_rock_n : rock_n;
 }
 
-//! [0]
 void main()
 {
     texs t;
     vec3 lightVector = normalize(-dirLight.sunDirection);
     vec3 viewDir = normalize(viewpos - pos);
+    vec3 halfwayDir = normalize(lightVector + viewDir);
     setTextures(t);
     float rockH = 3.0f;
     float sandH = 2.0f;
@@ -45,27 +45,26 @@ void main()
     vec3 diffuse, specular, nm;
     if(pos.y > rockH) {
         diffuse = vec3(texture2D(t.tRock, v_texcoord * texMultiplier).rgb * dirLight.diffuse);
-        nm = texture2D(t.tRockN, v_texcoord * texMultiplier).rgb;
+        nm = texture2D(t.tRockN, v_texcoord * texMultiplier).rbg;
     } else if (pos.y > sandH && pos.y < rockH ){
         diffuse = mix(texture2D(t.tSand, v_texcoord * texMultiplier),texture2D(t.tRock, v_texcoord * texMultiplier), (pos.y - sandH) / (rockH - sandH)).rgb * dirLight.diffuse;
-        nm = mix(texture2D(t.tSandN, v_texcoord * texMultiplier), texture2D(t.tRockN, v_texcoord * texMultiplier), (pos.y - sandH) / (rockH - sandH)).rgb;
+        nm = mix(texture2D(t.tSandN, v_texcoord * texMultiplier), texture2D(t.tRockN, v_texcoord * texMultiplier), (pos.y - sandH) / (rockH - sandH)).rbg;
     } else {
         diffuse = texture2D(t.tSand, v_texcoord * texMultiplier).rgb * dirLight.diffuse;
-        nm = texture2D(t.tSandN, v_texcoord * texMultiplier).rgb;
+        nm = texture2D(t.tSandN, v_texcoord * texMultiplier).rbg;
     }
-    nm = normalize(nm * 2.0 - 1.0);
+    //nm = normalize(nm * 2.0 - 1.0);
     nm = normalize(normal + nm);
     vec3 reflect = reflect(-lightVector, nm);
     float diff = max(dot(nm, lightVector), 0.1);
-    float spec = pow(max(dot(viewDir, reflect), 0.0), 32);
-    specular = (spec * 0.5) * dirLight.specular;
+    float spec = pow(max(dot(viewDir, reflect), 0.1), 8);
+    specular = (spec * 0.2) * dirLight.specular;
     gl_FragColor = vec4((diffuse * diff) + specular, 1.0);
     //debug normal
     //gl_FragColor = vec4(lightVector, 1.0);
-    //gl_FragColor = vec4(normal, 1.0);
+    //gl_FragColor = vec4(nm, 1.0);
     //gl_FragColor = vec4(diffuse);
     //gl_FragColor = vec4(1, 1, 1, 1);
     //gl_FragColor = vec4(specular, 1.0);
     //gl_FragColor = vec4(texture2D(t.tRockN, v_texcoord * 5).rgb, 1.0);
 }
-//! [0]

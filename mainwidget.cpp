@@ -55,44 +55,31 @@
 #include <iostream>
 #include <QtMultimedia/QSound>
 #include "utils.h"
+#include <random>
+
 
 float MainWidget::deltaTime = 0.0;
 float MainWidget::lastFrame = 0.0;
-QSound gunSound("assets/sound/cg1.wav");
 
 float distancePlane = 2.0;
 
-MainWidget::MainWidget(int fps, Seasons s, QWidget *parent) :
+MainWidget::MainWidget(int fps, QWidget *parent) :
     QOpenGLWidget(parent),
-    model(nullptr),
-    terrain(nullptr),
-    camera(),
     orbit(false),
     fps(fps),
-    skyboxTexture(nullptr),
-    particleEngineSnow(nullptr),
-    particleEngineRain(nullptr),
-    keys(5, false)
+    keys(5, false),
+    gc(),
+    torrusTime(0.0f)
 {
     setMouseTracking(true);
-    seasonTimer = new QTimer();
-    seasonM = new SeasonManager(s);
-    seasonTimer->connect(seasonTimer, SIGNAL(timeout()), seasonM, SLOT(changeSeason()));
-    seasonTimer->start(CALENDAR_TIME);
 }
 
 MainWidget::~MainWidget()
 {
     // Make sure the context is current when deleting the texture
     // and the buffers.
-    makeCurrent();
-    delete terrain;
-    delete height;
-    delete skyboxTexture;
-    delete particleEngineSnow;
-    delete particleEngineRain;
-    delete model;
-    doneCurrent();
+   /* makeCurrent();
+    doneCurrent();*/
 }
 
 void MainWidget::mousePressEvent(QMouseEvent *e) {
@@ -122,63 +109,85 @@ void MainWidget::wheelEvent(QWheelEvent *event) {
 void MainWidget::timerEvent(QTimerEvent *) {
     update();
     //move
-    float sensi = 0.03 * deltaTime;
-        if(keys[0]) {
-            model->translate(0.0, sensi, 0.0);
+    float sensi = 20.0 * deltaTime;
+    auto pos = jet->getPos();
+    if(keys[0]) {
+        pos.setY(pos.y() + sensi);
+    }
+    if(keys[1]) {
+        pos.setX(pos.x() + sensi);
+    }
+    if(keys[2]) {
+        pos.setY(pos.y() - sensi);
+    }
+    if(keys[3]) {
+        pos.setX(pos.x() - sensi);
+    }
+    if(keys[4]) {
+        particleEngineBullet->generateParticles(jet->getPos(), 80.0);
+    }
+    jet->translate(pos.x(), pos.y(), pos.z());
+    //banking
+    float rotSpeed = 150.0 * deltaTime;
+    if(gc.bankingLeft) {
+        gc.jetRotAngle = std::max(gc.jetRotAngle - rotSpeed, -30.0f);
+    }
+    if(gc.bankingRight) {
+        gc.jetRotAngle = std::min(gc.jetRotAngle + rotSpeed, 30.0f);
+    }
+    if(!gc.bankingLeft and !gc.bankingRight) {
+        if(gc.jetRotAngle > 0) {
+            gc.jetRotAngle = std::max(gc.jetRotAngle - rotSpeed, 0.0f);
+        } else {
+            gc.jetRotAngle = std::min(gc.jetRotAngle + rotSpeed, 0.0f);
         }
-        if(keys[1]) {
-            model->translate(sensi, 0.0, 0.0);
-        }
-        if(keys[2])
-            model->translate(0.0, -sensi, 0.0);
-        if(keys[3])
-            model->translate(-sensi, 0.0, 0.0);
-        if(keys[4]) {
-            particleEngineBullet->generateParticles(model->getPos(), 65.0);
-            //gunSound.play();
-        }
+    }
+    jet->rotateZ(gc.jetRotAngle);
+    jet->getChildren().front()->rotateZ(-gc.jetRotAngle);
 }
 
 void MainWidget::keyPressEvent(QKeyEvent *event) {
-
+    /*Camera *cam = static_cast<Camera*>(camera.get());
     switch(event->key()) {
         case Qt::Key_Z:
-            camera.processKeyPress(Camera_Movement::Z);
+            cam->processKeyPress(Camera_Movement::Z);
             break;
         case Qt::Key_S:
-            camera.processKeyPress(Camera_Movement::S);
+            cam->processKeyPress(Camera_Movement::S);
             break;
         case Qt::Key_Q:
-            camera.processKeyPress(Camera_Movement::Q);
+            cam->processKeyPress(Camera_Movement::Q);
             break;
         case Qt::Key_D:
-            camera.processKeyPress(Camera_Movement::D);
+            cam->processKeyPress(Camera_Movement::D);
             break;
         case Qt::Key_C:
-            camera.processKeyPress(Camera_Movement::C);
+            cam->processKeyPress(Camera_Movement::C);
             break;
         case Qt::Key_W:
-            camera.processKeyPress(Camera_Movement::W);
+            cam->processKeyPress(Camera_Movement::W);
             break;
-    }
-    /*
+    }*/
+
     switch(event->key()) {
         case Qt::Key_Z:
             keys[0] = true;
             break;
         case Qt::Key_Q:
             keys[1] = true;
+            gc.bankingLeft = true;
             break;
         case Qt::Key_S:
             keys[2] = true;
             break;
         case Qt::Key_D:
             keys[3] = true;
+            gc.bankingRight = true;
             break;
         case Qt::Key_Space:
             keys[4] = true;
             break;
-    }*/
+    }
 }
 
 void MainWidget::keyReleaseEvent(QKeyEvent *event) {
@@ -188,12 +197,14 @@ void MainWidget::keyReleaseEvent(QKeyEvent *event) {
             break;
         case Qt::Key_Q:
             keys[1] = false;
+            gc.bankingLeft = false;
             break;
         case Qt::Key_S:
             keys[2] = false;
             break;
         case Qt::Key_D:
             keys[3] = false;
+            gc.bankingRight = false;
             break;
         case Qt::Key_Space:
             keys[4] = false;;
@@ -202,12 +213,15 @@ void MainWidget::keyReleaseEvent(QKeyEvent *event) {
 }
 
 void MainWidget::mouseMoveEvent(QMouseEvent *event) {
+/*
     if(event->buttons() & Qt::LeftButton) {
         float xoffset = event->x() - mousePressPosition.x();
         float yoffset = mousePressPosition.y() - event->y(); // reversed since y-coordinates range from bottom to top
         mousePressPosition = QVector2D(event->localPos());
-        camera.processMouseMovement(xoffset, yoffset);
+        Camera *cam = static_cast<Camera*>(camera.get());
+        cam->processMouseMovement(xoffset, yoffset);
     }
+*/
 }
 
 void MainWidget::initializeGL()
@@ -215,7 +229,6 @@ void MainWidget::initializeGL()
     initializeOpenGLFunctions();
     glClearColor(0, 0, 0, 1);
     initShaders();
-    initTextures();
     // Enable depth buffer
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
@@ -223,17 +236,48 @@ void MainWidget::initializeGL()
     // Enable back face culling
     //glEnable(GL_CULL_FACE);
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    terrain = new Terrain(200, 400, program);
-    particleEngineRain = new ParticleEngine(ParticleType::Rain);
-    particleEngineSnow = new ParticleEngine(ParticleType::Snow);
-    particleEngineBullet = new ParticleEngine(ParticleType::Bullet);
-    //model = new Model("assets/nanosuit/nanosuit.obj", &modelProgram);
-    //model = new Model("assets/jet/F-15C_Eagle.3ds", &modelProgram);
-    model = new Model("assets/jet/jet.3ds", &modelProgram);
-    model->translate(50, 15, 10);
-    model->setScale(0.5, 0.5, 0.5);
+    particleEngineBullet = new ParticleEngine(ParticleType::Bullet, particlesProgram);
+    scene = std::make_shared<Scene>();
+    skybox = std::make_shared<Skybox>(sbProgram);
+    //model = std::make_shared<Model>("assets/nanosuit/nanosuit.obj", &modelProgram);
+    jet = std::make_shared<Model>("assets/jet/jet.3ds", &modelProgram);
+    //nano = std::make_shared<Model>("assets/nanosuit/nanosuit.obj", &modelProgram);
+    terrain = std::make_shared<Terrain>(200, 400, program, particlesProgram);
+    camera = std::make_shared<Camera>();
+    Camera *cam = static_cast<Camera*>(camera.get());
+    gc.activeCamera = *cam;
+    Terrain* t = static_cast<Terrain*>(terrain.get());
+    t->addChunk(0.0, 0.0, 0.0);
+    t->addChunk(0.0, 0.0, t->getSize());
+    t->addChunk(0.0, 0.0, t->getSize() * 2);
+    //scene->addChild(model);
+    scene->addChild(terrain);
+    scene->addChild(skybox);
+    //model->addChild(jet);
+    //model->rotateY(180);
+    //jet->addChild(nano);
+    scene->addChild(jet);
+    jet->addChild(camera);
+    jet->translate(t->getSize() / 2.0, 15.0, 0.0);
+    camera->translate(0.0, 0.5, -3.0);
+    //nano->translate(0.0, 0.0, 20.0);
     // Use QBasicTimer because its faster than QTimer
     timer.start(1000/fps, this);
+}
+
+void MainWidget::generateTorus() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> disX(50.0, 150.0);
+    std::uniform_real_distribution<> disZ(80, 120.0);
+    std::uniform_real_distribution<> disY(15.0, 18.0);
+    std::uniform_real_distribution<> disSize(3.0, 5.0);
+    std::shared_ptr<GameObject> torus = std::make_shared<Model>("assets/torus/chienne.3ds", &modelProgram);
+    float size = disSize(gen);
+    torus->setScale(size, size, size);
+    torus->translate(disX(gen), disY(gen), disZ(gen));
+    scene->addChild(torus);
+    gc.torusVector.emplace_back(torus);
 }
 
 void MainWidget::initShaders()
@@ -279,110 +323,13 @@ void MainWidget::initShaders()
             close();
 }
 
-void MainWidget::initTextures()
-{
-    // Load heightmap and cube.png image
-    height = new QOpenGLTexture(QImage(":/heightmap-1.png").mirrored());
-    // Set nearest filtering mode for texture minification
-    height->setMinificationFilter(QOpenGLTexture::Nearest);
-
-    // Set bilinear filtering mode for texture magnification
-    height->setMagnificationFilter(QOpenGLTexture::Linear);
-
-    // Wrap texture coordinates by repeating
-    // f.ex. texture coordinate (1.1, 1.2) is same as (0.1, 0.2)
-    height->setWrapMode(QOpenGLTexture::Repeat);
-    //*** load skybox ***//
-    loadCubeMap();
-}
-
-void MainWidget::loadCubeMap() {
-    skyboxTexture = new QOpenGLTexture(QOpenGLTexture::TargetCubeMap);
-    skyboxTexture->create();
-    for (unsigned int i = 0; i < sbFaces.size(); i++) {
-        QImage img = QImage(sbFaces[i].c_str()).convertToFormat(QImage::Format_RGBA8888);
-        unsigned char *data = img.bits();
-        if(i == 0) { //finir init la texture
-            skyboxTexture->setSize(img.width(), img.height(), img.depth());
-            skyboxTexture->setFormat(QOpenGLTexture::RGBA8_UNorm);
-            skyboxTexture->allocateStorage();
-        }
-        if (data) {
-            QOpenGLTexture::CubeMapFace cbf = (QOpenGLTexture::CubeMapFace) (GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
-            skyboxTexture->setData(0, 0, cbf, QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, (const void*)data, 0);
-        }
-        else {
-            std::cout << "Cubemap texture failed to load at path: " << sbFaces[i] << std::endl;
-        }
-    }
-    skyboxTexture->setWrapMode(QOpenGLTexture::ClampToEdge);
-    skyboxTexture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
-    skyboxTexture->setMagnificationFilter(QOpenGLTexture::LinearMipMapLinear);
-    skyboxTexture->generateMipMaps();
-    //build cubemap
-    std::vector<float> skyboxVertices= {
-        // positions
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-        -1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f
-    };
-    std::vector<Vertex> sbVertices;
-    for(int i = 0; i < skyboxVertices.size(); i+=3) {
-        Vertex v;
-        v._position = QVector3D(skyboxVertices[i], skyboxVertices[i + 1], skyboxVertices[i + 2]);
-        sbVertices.push_back(v);
-    }
-    cubeMap = new Mesh(sbVertices, std::vector<unsigned int>(), std::vector<Texture>(), sbProgram);
-}
-
 void MainWidget::resizeGL(int w, int h)
 {
     // Calculate aspect ratio
     qreal aspect = qreal(w) / qreal(h ? h : 1);
-
     const qreal zNear = 0.3, zFar = 2000.0, fov = 45.0;
-
     // Reset projection
     projection.setToIdentity();
-
     // Set perspective projection
     projection.perspective(fov, aspect, zNear, zFar);
 }
@@ -391,20 +338,17 @@ void MainWidget::paintGL()
 {
     //delta time
     float currentFrame = QTime::currentTime().msecsSinceStartOfDay();
-    deltaTime = currentFrame - lastFrame;
+    if(lastFrame == 0.0)
+        lastFrame = currentFrame;
+    deltaTime = (currentFrame - lastFrame) / 1000.0;
     lastFrame = currentFrame;
-    Light dirLight(QVector3D(0.5, -0.4, -0.2));
-    /*auto lerp = [] (QColor &&a, QColor &&b, float step) {
-        float h = a.redF() * (1.0 - step) + b.redF() * step;
-        float s = a.greenF() * (1.0 - step) + b.greenF() * step;
-        float v = a.blueF() * (1.0 - step) + b.blueF() * step;
-        return QColor::fromRgbF(h, s, v);
-    };*/
-    //QColor color = LerpHSV(seasonM->getCurrentSeasonColor().toHsv(), seasonM->getNextSeasonColor().toHsv(), 1.0 - (seasonTimer->remainingTime() /(float) CALENDAR_TIME));
-    //QColor color = lerp(seasonM->getCurrentSeasonColor(), seasonM->getNextSeasonColor(),1.0 - (seasonTimer->remainingTime() / (float) CALENDAR_TIME));
-    //dirLight._diffuse = QVector3D(color.redF(), color.greenF(), color.blueF()).normalized(); //lol
-    //glClearColor(color.redF(), color.greenF(), color.blueF(), 1);
-    glClearColor(0.0, 0.0, 0.0, 1.0);
+    //torus generation
+    torrusTime += deltaTime;
+    if(torrusTime >= 3.0f) {
+        generateTorus();
+        torrusTime = 0.0f;
+    }
+    Light dirLight(QVector3D(0.0, -1.0, 0.5));
     // Clear color and depth buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Calculate model view transformation
@@ -412,70 +356,20 @@ void MainWidget::paintGL()
    /* if(orbit) {
         camera.orbitAround(matrix, 1.0f , 0.0f);
     }*/
-    camera.lookAt(matrix);
-    /*QVector4D modelFront = model->_transform.column(2).normalized();
-    QVector4D modelUp = model->_transform.column(1).normalized();
-    QVector4D modelPos = model->_transform.column(3);
-    modelPos += modelUp * 0.5;
-    modelPos -= modelFront * distancePlane;
-    QVector3D target = QVector3D(modelPos.x(), modelPos.y(), modelPos.z()) + QVector3D(modelFront.x(), modelFront.y(), modelFront.z());
-    matrix.lookAt(QVector3D(modelPos.x(), modelPos.y(), modelPos.z()), target, QVector3D(modelUp.x(), modelUp.y(), modelUp.z()));*/
-    //scene
-    program.bind();
-    program.setUniformValue("mvp_matrix", projection * matrix);
-    program.setUniformValue("dirLight.sunDirection", dirLight._pos);
-    program.setUniformValue("dirLight.ambient", dirLight._ambient);
-    program.setUniformValue("dirLight.diffuse", dirLight._diffuse);
-    program.setUniformValue("dirLight.specular", dirLight._specular);
-    if(seasonM->getSeason() == Seasons::Winter) {
-        terrain->draw(program, 1);
-    } else {
-        terrain->draw(program, 0);
-    }
-    particlesProgram.bind();
-    height->bind(0);
-    particlesProgram.setUniformValue("height_map", 0);
-    particlesProgram.setUniformValue("mvp_matrix", projection * matrix);
-    particlesProgram.setUniformValue("map_size", terrain->getSize());
-    if(seasonM->getSeason() == Seasons::Winter) {
-        ParticleEngine &pe = *particleEngineSnow;
-        pe.generateParticles(terrain->getSize(), 400.0f);
-        pe.updateParticles();
-        pe.drawParticles(&particlesProgram);
-    } else if(seasonM->getSeason() == Seasons::Autumn) {
-        ParticleEngine &pe = *particleEngineRain;
-        pe.generateParticles(terrain->getSize(), 2000.0f);
-        pe.updateParticles();
-        pe.drawParticles(&particlesProgram);
-    }
-    height->release();
-    modelProgram.bind();
-    modelProgram.setUniformValue("viewpos", camera.getPos());
-    modelProgram.setUniformValue("mvp_matrix", projection * matrix);
-    modelProgram.setUniformValue("dirLight.sunDirection", dirLight._pos);
-    modelProgram.setUniformValue("dirLight.ambient", dirLight._ambient);
-    modelProgram.setUniformValue("dirLight.diffuse", dirLight._diffuse);
-    modelProgram.setUniformValue("dirLight.specular", dirLight._specular);
-    model->draw();
-    //bullets
-    particlesProgram.bind();
-    height->bind(0);
-    particlesProgram.setUniformValue("height_map", 0);
-    particlesProgram.setUniformValue("mvp_matrix", projection * matrix);
-    particlesProgram.setUniformValue("map_size", terrain->getSize());
-    ParticleEngine &pe = *particleEngineBullet;
-    pe.updateParticles();
-    pe.drawParticles(&particlesProgram);
-    height->release();
-    //skybox
-    glDepthFunc(GL_LEQUAL);
-    sbProgram.bind();
-    skyboxTexture->bind(0);
-    QMatrix4x4 view = matrix;
-    view.setColumn(3, QVector4D(0.0,0.0,0.0,1.0));
-    sbProgram.setUniformValue("mvp_matrix", projection * view);
-    sbProgram.setUniformValue("skybox", 0);
-    cubeMap->draw(sbProgram);
-    skyboxTexture->release();
-    glDepthFunc(GL_LESS);
+    Camera *cam = static_cast<Camera*>(camera.get());
+    cam->lookAt(matrix);
+    Renderer *renderer = new Renderer(dirLight);
+    renderer->_projection = projection;
+    renderer->_view = matrix;
+    renderer->camPos = camera->getPos();
+    Terrain *t = static_cast<Terrain*>(terrain.get());
+    renderer->mapSize = t->getSize();
+    renderer->mapNbV = t->getSizeV();
+    particleEngineBullet->updateParticles();
+    particleEngineBullet->drawParticles(*renderer);
+    scene->draw(*renderer);
+    t->moveTerrain();
+   // gc.checkCollisionTorus(jet, scene);
+    gc.moveTorus(scene);
+    delete renderer;
 }

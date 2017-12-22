@@ -2,11 +2,12 @@
 #include <iostream>
 #include "mainwidget.h"
 
-ParticleEngine::ParticleEngine(ParticleType t)
+ParticleEngine::ParticleEngine(ParticleType t, QOpenGLShaderProgram &program)
     : particlesData()
     , lastUsedParticles(0)
     , lastTime(0)
     , type(t)
+    , program(program)
 {
     initializeOpenGLFunctions();
     arrayBuffer.create();
@@ -34,14 +35,23 @@ void ParticleEngine::updateParticles() {
     arrayBuffer.allocate(particlesData.data(), particlesData.size() * sizeof(ParticleData));
 }
 
-void ParticleEngine::drawParticles(QOpenGLShaderProgram *program) {
+void ParticleEngine::drawParticles(const Renderer &renderer, QOpenGLTexture *height) {
+    program.bind();
+    if(height != nullptr) {
+        program.setUniformValue("hasHeightMap", false);
+        height->bind(0);
+    }
+    program.setUniformValue("height_map", 0);
+    program.setUniformValue("hasHeightMap", true);
+    program.setUniformValue("mvp_matrix", renderer._projection * renderer._view);
+    program.setUniformValue("map_size", renderer.mapSize);
     arrayBuffer.bind();
-    int vertexLocation = program->attributeLocation("a_position");
-    int vertexColor = program->attributeLocation("a_color");
-    program->enableAttributeArray(vertexLocation);
-    program->setAttributeBuffer(vertexLocation, GL_FLOAT, 0, 4, sizeof(ParticleData));
-    program->enableAttributeArray(vertexColor);
-    program->setAttributeBuffer(vertexColor, GL_FLOAT, sizeof(QVector4D), 4, sizeof(ParticleData));
+    int vertexLocation = program.attributeLocation("a_position");
+    int vertexColor = program.attributeLocation("a_color");
+    program.enableAttributeArray(vertexLocation);
+    program.setAttributeBuffer(vertexLocation, GL_FLOAT, 0, 4, sizeof(ParticleData));
+    program.enableAttributeArray(vertexColor);
+    program.setAttributeBuffer(vertexColor, GL_FLOAT, sizeof(QVector4D), 4, sizeof(ParticleData));
     glDrawArrays(GL_POINTS, 0, particlesData.size());
 }
 

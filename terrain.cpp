@@ -1,14 +1,15 @@
 #include "terrain.h"
 #include <iostream>
 #include "noiseutils.h"
+#include "mainwidget.h"
 
 using namespace noise;
 
-Chunk::Chunk(std::vector<Texture> &textures, QOpenGLShaderProgram &program)
-    : Chunk(50, 150, 10, 20, 10, textures, program) {}
+Chunk::Chunk(std::vector<Texture> &textures, QOpenGLShaderProgram &program, QOpenGLShaderProgram &particlesProgram)
+    : Chunk(50, 150, 10, 20, 10, textures, program, particlesProgram) {}
 
-Chunk::Chunk(int size, int nbV, int startX, int startY, int decalage, std::vector<Texture> &textures, QOpenGLShaderProgram &program)
-    : sizeV(nbV), size(size), decalage(decalage), startX(startX), startZ(startY)
+Chunk::Chunk(int size, int nbV, int startX, int startY, int decalage, std::vector<Texture> &textures, QOpenGLShaderProgram &program, QOpenGLShaderProgram &particlesProgram)
+    : sizeV(nbV), size(size), decalage(decalage), startX(startX), startZ(startY), _program(program), _pEngine(ParticleType::Snow, particlesProgram)
 {
     const float nbVf = nbV;
     std::vector<Vertex> vertices;
@@ -36,15 +37,8 @@ Chunk::Chunk(int size, int nbV, int startX, int startY, int decalage, std::vecto
             indices.push_back((y*nbV) + x + nbV);
         }
     }
-    generateTerrain(textures, 0); // generate heightmap
+    generateTerrain(textures/*, 0*/); // generate heightmap
     _mesh = std::make_unique<Mesh>(vertices, indices, textures, program);
-}
-
-void Chunk::draw(QOpenGLShaderProgram &program, int winter = 0) {
-    program.setUniformValue("winter", winter);
-    program.setUniformValue("sizeV", (float) sizeV);
-    program.setUniformValue("transform", _transform);
-    _mesh->draw(program);
 }
 
 int Chunk::getSize() {
@@ -55,7 +49,12 @@ int Chunk::getSizeV() {
     return sizeV;
 }
 
-void Chunk::generateTerrain(std::vector<Texture> &textures, int cptId) {
+void Chunk::setInitPos(float x, float y, float z) {
+    initPos = QVector3D(x, y, z);
+    translate(x, y, z);
+}
+
+void Chunk::generateTerrain(std::vector<Texture> &textures/*, int cptId*/) {
     //https://www.redblobgames.com/maps/terrain-from-noise/
     //http://libnoise.sourceforge.net/tutorials/tutorial3.html
     module::RidgedMulti mountainTerrain;
@@ -103,18 +102,13 @@ void Chunk::generateTerrain(std::vector<Texture> &textures, int cptId) {
     tex->setMagnificationFilter(QOpenGLTexture::Linear);
     tex->setWrapMode(QOpenGLTexture::ClampToEdge);
     Texture te;
-    te.id = cptId++;
+    //te.id = cptId++;
+    te.id = tex->textureId();
     //te.path = it->first;
     te.type = Mesh::DIFFUSE_MAP;
     te.uniformName = "height_map";
     te.texture = tex;
     textures.push_back(te);
-}
-
-void Terrain::draw(QOpenGLShaderProgram &program, int winter) {
-    for(Chunk &chunk : _chunks) {
-        chunk.draw(program, winter);
-    }
 }
 
 int Terrain::getSize() {
@@ -127,7 +121,7 @@ int Terrain::getSizeV() {
 
 std::vector<Texture> Terrain::loadTextures() {
     std::vector<Texture> textures;
-    int cptId = 1;
+    //int cptId = 1;
     for(auto it = texturesPath.begin(); it != texturesPath.end(); ++it) {
         Texture texture;
         QOpenGLTexture *tex = new QOpenGLTexture(QImage(it->first.c_str()).mirrored());
@@ -140,7 +134,8 @@ std::vector<Texture> Terrain::loadTextures() {
         glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &aniso);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, aniso);
         tex->release();
-        texture.id = cptId++;
+        //texture.id = cptId++;
+        texture.id = tex->textureId();
         texture.path = it->first;
         texture.type = Mesh::DIFFUSE_MAP;
         texture.uniformName = it->second;
@@ -148,4 +143,58 @@ std::vector<Texture> Terrain::loadTextures() {
         textures.push_back(texture);
     }
     return textures;
+}
+
+void Chunk::draw(Renderer &renderer){
+     _program.bind();
+     _program.setUniformValue("mvp_matrix", renderer._projection * renderer._view);
+     _program.setUniformValue("dirLight.sunDirection", renderer.light._pos);
+     _program.setUniformValue("dirLight.ambient", renderer.light._ambient);
+     _program.setUniformValue("dirLight.diffuse", renderer.light._diffuse);
+     _program.setUniformValue("dirLight.specular", renderer.light._specular);
+    _program.setUniformValue("winter", renderer.winter);
+    _program.setUniformValue("sizeV", (float) sizeV);
+    _program.setUniformValue("transform", _transform);
+    _mesh->draw(_program);
+    if(renderer.winter == 1) {
+        _pEngine.generateParticles(renderer.mapSize, 100.0f);
+        _pEngine.updateParticles();
+        _pEngine.drawParticles(renderer, _mesh->_textures.front().texture);
+    }
+    drawChild(renderer);
+}
+
+void Terrain::draw(Renderer &renderer) {
+    int winter;
+    if(seasonM->getSeason() == Seasons::Winter) {
+        winter = 1;
+    } else {
+        winter = 0;
+    }
+    renderer.winter = winter;
+    drawChild(renderer);
+}
+
+void Terrain::addChunk(float _x, float _y, float _z) {
+    //_chunks.emplace_back(_chunkSize, _chunkNbV, _startX, _startZ, _boxDecalage, textures,program);
+    std::shared_ptr<GameObject> c = std::make_shared<Chunk>(_chunkSize, _chunkNbV, _startX, _startZ, _boxDecalage, textures, _program, _pProgram);
+    addChild(c);
+    Chunk *ch = static_cast<Chunk*>(c.get());
+    ch->setInitPos(_x, _y, _z);
+    _startZ += _boxDecalage;
+}
+
+void Terrain::moveTerrain() {
+    float speed = 30.0 * MainWidget::deltaTime;
+    for(auto &c : getChildren()) {
+        QVector3D pos = c->getPos();
+        c->translate(0.0, 0.0, pos.z() - speed);
+    }
+    auto &c = getChildren().front();
+    auto &cL = getChildren().back();
+    if(c->getPos().z() < - _chunkSize) {
+        this->removeChild(c);
+        float cLZ = cL->getPos().z();
+        addChunk(0.0, 0.0, _chunkSize + cLZ);
+    }
 }

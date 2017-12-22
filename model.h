@@ -18,7 +18,9 @@ public:
     {
         loadModel(path);
     }
-    void draw();
+    void draw(Renderer &renderer) override;
+    /*bool collide(Model &m);
+    bool collide(Mesh &m);*/
 private:
     std::vector<std::unique_ptr<Mesh>> _meshes;
     std::vector<QOpenGLTexture*> _loadedTextures;

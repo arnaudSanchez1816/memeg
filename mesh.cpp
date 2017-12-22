@@ -85,6 +85,11 @@ void Mesh::draw(QOpenGLShaderProgram &_program) {
                 _program.setUniformValue(v.c_str(), t->id);
             }
         }
+        auto check = [] (unsigned int i) {
+            return i > 1;
+        };
+        _program.setUniformValue("useSpecular", check(specularNr));
+        _program.setUniformValue("useNormal", check(normalNr));
         glDrawElements(GL_TRIANGLES, _indices.size(), GL_UNSIGNED_INT, 0);
         vao.release();
     } else {
@@ -115,3 +120,10 @@ void Mesh::draw(QOpenGLShaderProgram &_program) {
         vao.release();
     }
 }
+/*
+bool Mesh::collide(Mesh &m) {
+    return (_collisionBox.front().x() <= m._collisionBox.back().x() and _collisionBox.back().x() >= m._collisionBox.front().x()) and
+           (_collisionBox.front().y() <= m._collisionBox.back().y() and _collisionBox.back().y() >= m._collisionBox.front().y()) and
+           (_collisionBox.front().z() <= m._collisionBox.back().z() and _collisionBox.back().z() >= m._collisionBox.front().z());
+}
+*/

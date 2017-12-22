@@ -34,7 +34,7 @@ Particle::Particle(QVector3D pos, QVector4D color, float theta, float phi, float
 void Particle::update() {
     _life -= MainWidget::deltaTime;
     if(_life > 0) {
-        _position += (_velocity * (MainWidget::deltaTime / 1000.0f));
+        _position += (_velocity * MainWidget::deltaTime);
         if(_position.y() <= 0.0f) {
             _life = 0;
         }
@@ -87,7 +87,7 @@ Particle Particle::generateSnowParticle(int mapSize) {
                     , 0.0f
                     , disPhi(gen)
                     , disSp(gen)
-                    , 10000
+                    , 10
                     , disSi(gen));
 }
 
@@ -104,7 +104,7 @@ Particle Particle::generateRainParticle(int mapSize) {
                     , 0.0f
                     , disPhi(gen)
                     , disSp(gen)
-                    , 4000
+                    , 4
                     , disSi(gen));
 }
 
@@ -113,7 +113,7 @@ Particle Particle::generateBulletParticle(QVector3D pos) {
                     , QVector4D(1.0f, 1.0f, 0.2f, 1.0f)
                     , 90.0f
                     , 90
-                    , 30
-                    , 500
+                    , 100
+                    , 1.0f
                     , 2.0f);
 }
