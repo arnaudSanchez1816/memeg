@@ -53,15 +53,11 @@
 #include <QMouseEvent>
 #include <math.h>
 #include <iostream>
-#include <QtMultimedia/QSound>
 #include "utils.h"
 #include <random>
 
-
 float MainWidget::deltaTime = 0.0;
 float MainWidget::lastFrame = 0.0;
-
-float distancePlane = 2.0;
 
 MainWidget::MainWidget(int fps, QWidget *parent) :
     QOpenGLWidget(parent),
@@ -88,26 +84,14 @@ void MainWidget::mousePressEvent(QMouseEvent *e) {
 }
 
 void MainWidget::mouseReleaseEvent(QMouseEvent *e) {
-    if(e->button() == Qt::RightButton) {
-        orbit = !orbit;
-    }
 }
 
 void MainWidget::wheelEvent(QWheelEvent *event) {
-    int numDegrees = event->delta() / 8;
-    float numSteps = numDegrees / 100.0;
-    if (event->delta() > 0.0) {
-        if(distancePlane > 1.0)
-            distancePlane -= numSteps;
-    } else {
-        if(distancePlane < 4.0)
-            distancePlane -= numSteps;
-    }
-    event->accept();
 }
 
 void MainWidget::timerEvent(QTimerEvent *) {
     update();
+    /*
     //move
     float sensi = 20.0 * deltaTime;
     auto pos = jet->getPos();
@@ -144,10 +128,11 @@ void MainWidget::timerEvent(QTimerEvent *) {
     }
     jet->rotateZ(gc.jetRotAngle);
     jet->getChildren().front()->rotateZ(-gc.jetRotAngle);
+    */
 }
 
 void MainWidget::keyPressEvent(QKeyEvent *event) {
-    /*Camera *cam = static_cast<Camera*>(camera.get());
+    Camera *cam = static_cast<Camera*>(camera.get());
     switch(event->key()) {
         case Qt::Key_Z:
             cam->processKeyPress(Camera_Movement::Z);
@@ -167,8 +152,8 @@ void MainWidget::keyPressEvent(QKeyEvent *event) {
         case Qt::Key_W:
             cam->processKeyPress(Camera_Movement::W);
             break;
-    }*/
-
+    }
+/*
     switch(event->key()) {
         case Qt::Key_Z:
             keys[0] = true;
@@ -187,11 +172,12 @@ void MainWidget::keyPressEvent(QKeyEvent *event) {
         case Qt::Key_Space:
             keys[4] = true;
             break;
-    }
+    }*/
 }
 
 void MainWidget::keyReleaseEvent(QKeyEvent *event) {
-    switch(event->key()) {
+    /*
+     switch(event->key()) {
         case Qt::Key_Z:
             keys[0] = false;
             break;
@@ -210,10 +196,10 @@ void MainWidget::keyReleaseEvent(QKeyEvent *event) {
             keys[4] = false;;
             break;
     }
+    */
 }
 
 void MainWidget::mouseMoveEvent(QMouseEvent *event) {
-/*
     if(event->buttons() & Qt::LeftButton) {
         float xoffset = event->x() - mousePressPosition.x();
         float yoffset = mousePressPosition.y() - event->y(); // reversed since y-coordinates range from bottom to top
@@ -221,7 +207,6 @@ void MainWidget::mouseMoveEvent(QMouseEvent *event) {
         Camera *cam = static_cast<Camera*>(camera.get());
         cam->processMouseMovement(xoffset, yoffset);
     }
-*/
 }
 
 void MainWidget::initializeGL()
@@ -234,50 +219,27 @@ void MainWidget::initializeGL()
     glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
     glEnable(GL_BLEND);
     // Enable back face culling
-    //glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     particleEngineBullet = new ParticleEngine(ParticleType::Bullet, particlesProgram);
     scene = std::make_shared<Scene>();
     skybox = std::make_shared<Skybox>(sbProgram);
-    //model = std::make_shared<Model>("assets/nanosuit/nanosuit.obj", &modelProgram);
-    jet = std::make_shared<Model>("assets/jet/jet.3ds", &modelProgram);
-    //nano = std::make_shared<Model>("assets/nanosuit/nanosuit.obj", &modelProgram);
-    terrain = std::make_shared<Terrain>(200, 400, program, particlesProgram);
     camera = std::make_shared<Camera>();
+    chunk = std::make_shared<VChunk>(&modelProgram);
+    VChunk * ch = static_cast<VChunk*>(chunk.get());
+    ch->createMesh();
+    //voxel = std::make_shared<Voxel>(new Model("assets/cube/cube.obj",&modelProgram));
+   // voxel = std::make_shared<Voxel>(0.0, 0.0, 0.0, &modelProgram);
     Camera *cam = static_cast<Camera*>(camera.get());
     gc.activeCamera = *cam;
-    Terrain* t = static_cast<Terrain*>(terrain.get());
-    t->addChunk(0.0, 0.0, 0.0);
-    t->addChunk(0.0, 0.0, t->getSize());
-    t->addChunk(0.0, 0.0, t->getSize() * 2);
-    //scene->addChild(model);
-    scene->addChild(terrain);
+    scene->addChild(camera);
     scene->addChild(skybox);
-    //model->addChild(jet);
-    //model->rotateY(180);
-    //jet->addChild(nano);
-    scene->addChild(jet);
-    jet->addChild(camera);
-    jet->translate(t->getSize() / 2.0, 15.0, 0.0);
-    camera->translate(0.0, 0.5, -3.0);
-    //nano->translate(0.0, 0.0, 20.0);
+    scene->addChild(chunk);
+    chunk->rotateX(45);
+    chunk->rotateZ(60);
+    //scene->addChild(voxel);
     // Use QBasicTimer because its faster than QTimer
     timer.start(1000/fps, this);
-}
-
-void MainWidget::generateTorus() {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> disX(50.0, 150.0);
-    std::uniform_real_distribution<> disZ(80, 120.0);
-    std::uniform_real_distribution<> disY(15.0, 18.0);
-    std::uniform_real_distribution<> disSize(3.0, 5.0);
-    std::shared_ptr<GameObject> torus = std::make_shared<Model>("assets/torus/chienne.3ds", &modelProgram);
-    float size = disSize(gen);
-    torus->setScale(size, size, size);
-    torus->translate(disX(gen), disY(gen), disZ(gen));
-    scene->addChild(torus);
-    gc.torusVector.emplace_back(torus);
 }
 
 void MainWidget::initShaders()
@@ -342,34 +304,17 @@ void MainWidget::paintGL()
         lastFrame = currentFrame;
     deltaTime = (currentFrame - lastFrame) / 1000.0;
     lastFrame = currentFrame;
-    //torus generation
-    torrusTime += deltaTime;
-    if(torrusTime >= 3.0f) {
-        generateTorus();
-        torrusTime = 0.0f;
-    }
     Light dirLight(QVector3D(0.0, -1.0, 0.5));
     // Clear color and depth buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Calculate model view transformation
     QMatrix4x4 matrix;
-   /* if(orbit) {
-        camera.orbitAround(matrix, 1.0f , 0.0f);
-    }*/
     Camera *cam = static_cast<Camera*>(camera.get());
     cam->lookAt(matrix);
     Renderer *renderer = new Renderer(dirLight);
     renderer->_projection = projection;
     renderer->_view = matrix;
     renderer->camPos = camera->getPos();
-    Terrain *t = static_cast<Terrain*>(terrain.get());
-    renderer->mapSize = t->getSize();
-    renderer->mapNbV = t->getSizeV();
-    particleEngineBullet->updateParticles();
-    particleEngineBullet->drawParticles(*renderer);
     scene->draw(*renderer);
-    t->moveTerrain();
-   // gc.checkCollisionTorus(jet, scene);
-    gc.moveTorus(scene);
     delete renderer;
 }

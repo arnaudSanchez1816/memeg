@@ -39,4 +39,5 @@ void main()
     //gl_FragColor = vec4(diffuse, 1.0);
     //gl_FragColor = vec4(specular, 1.0);
    // gl_FragColor = vec4(texture2D(texture_specular1, TexCoords).rgb, 1.0);
+    //gl_FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 }

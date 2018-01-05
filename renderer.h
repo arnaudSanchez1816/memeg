@@ -16,7 +16,9 @@ public:
     int winter;
 
     Renderer(Light &light)
-        :light(light) {}
+        :light(light) {
+
+    }
 };
 
 #endif // RENDERER_H

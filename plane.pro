@@ -20,7 +20,10 @@ SOURCES += main.cpp \
     scene.cpp \
     skybox.cpp \
     renderer.cpp \
-    gamecontroller.cpp
+    gamecontroller.cpp \
+    voxel.cpp \
+    vchunk.cpp \
+    vmesh.cpp
 
 SOURCES += \
     mainwidget.cpp
@@ -40,7 +43,10 @@ HEADERS += \
     scene.h \
     skybox.h \
     renderer.h \
-    gamecontroller.h
+    gamecontroller.h \
+    voxel.h \
+    vchunk.h \
+    vmesh.h
 
 RESOURCES += \
     shaders.qrc \
