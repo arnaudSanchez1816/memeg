@@ -1,7 +1,7 @@
 #include "voxel.h"
 
-Voxel::Voxel(float x, float y, float z)
-    : _mesh(std::unique_ptr<VMesh>(new VMesh(x, y, z))), _active(false)
+Voxel::Voxel()
+    :  _active(false), _top(false)
 {}
 
 bool Voxel::isActive() {
@@ -10,4 +10,12 @@ bool Voxel::isActive() {
 
 void Voxel::setActive(bool a) {
     _active = a;
+}
+
+bool Voxel::isTop() {
+    return _top;
+}
+
+void Voxel::setTop(bool a) {
+    _top = a;
 }

@@ -4,7 +4,7 @@
 const int VChunk::CHUNK_SIZE;
 
 VChunk::VChunk(VChunkManager &manager, QOpenGLShaderProgram *program)
-    : _program(program), _manager(manager)
+    : _program(program), _manager(manager), _voxelMesh(std::unique_ptr<VMesh>(new VMesh(0.0f, 0.0f, 0.0f)))
 {
     // Create the blocks
     _voxels = new Voxel***[CHUNK_SIZE];
@@ -13,27 +13,11 @@ VChunk::VChunk(VChunkManager &manager, QOpenGLShaderProgram *program)
         for(int j = 0; j < CHUNK_SIZE; j++) {
             _voxels[i][j] = new Voxel*[CHUNK_SIZE];
             for(int k = 0; k < CHUNK_SIZE; ++k) {
-                _voxels[i][j][k] = new Voxel(i, j, k);
+                _voxels[i][j][k] = new Voxel();
             }
         }
     }
-    Texture texture;
-    QOpenGLTexture *tex = new QOpenGLTexture(QImage("./assets/textures/brick.png").mirrored());
-    tex->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
-    tex->setMagnificationFilter(QOpenGLTexture::NearestMipMapNearest);
-    tex->setWrapMode(QOpenGLTexture::Repeat);
-    tex->generateMipMaps();
-    tex->bind();
-    float aniso = 2.0;
-    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &aniso);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, aniso);
-    tex->release();
-    texture.id = tex->textureId();
-    texture.path = "";
-    texture.type = Mesh::DIFFUSE_MAP;
-    texture.uniformName = "";
-    texture.texture = tex;
-    _texs.push_back(texture);
+    _texs = loadTextures();
 }
 
 VChunk::~VChunk() {
@@ -73,8 +57,8 @@ void VChunk::createMesh() {
         for (int y = 0; y < CHUNK_SIZE; y++) {
             for (int z = 0; z < CHUNK_SIZE; z++) {
                 if(_voxels[x][y][z]->isActive()) {
-                    addVoxel(*_voxels[x][y][z], cpt);
-                    cpt += _voxels[x][y][z]->_mesh->_vertices.size();
+                    addVoxel(x, y, z, cpt, _voxels[x][y][z]->isTop());
+                    cpt += _voxelMesh->_vertices.size();
                 }
             }
         }
@@ -82,11 +66,24 @@ void VChunk::createMesh() {
     _mesh = std::unique_ptr<Mesh>(new Mesh(_vertices, _indices, _texs, *_program));
 }
 
-void VChunk::addVoxel(const Voxel &voxel, unsigned int cpt) {
+void VChunk::addVoxel(float x, float y, float z, unsigned int cpt, bool isTop) {
     // add vertices of voxel to chunk mesh
-    std::copy(voxel._mesh->_vertices.begin(), voxel._mesh->_vertices.end(), std::back_inserter(_vertices));
+    std::transform(_voxelMesh->_vertices.begin(), _voxelMesh->_vertices.end(),std::back_inserter(_vertices), [x, y, z, isTop] (const Vertex &v) {
+        Vertex vertex;
+        vertex._normal = v._normal;
+        vertex._tangent = v._tangent;
+        vertex._texCoords = v._texCoords;
+        vertex._isTop = isTop;
+        QVector3D pos = v._position;
+        pos.setX(pos.x() + x);
+        pos.setY(pos.y() + y);
+        pos.setZ(pos.z() + z);
+        vertex._position = pos;
+
+        return vertex;
+    });
     //add indices
-    std::transform(voxel._mesh->_indices.begin(), voxel._mesh->_indices.end(),std::back_inserter(_indices), [cpt] (unsigned int i) {return i + cpt;});
+    std::transform(_voxelMesh->_indices.begin(), _voxelMesh->_indices.end(),std::back_inserter(_indices), [cpt] (unsigned int i) { return i + cpt; });
 }
 
 void VChunk::setupCube() {
@@ -114,18 +111,42 @@ void VChunk::setupSphere() {
 }
 
 void VChunk::setupLandscape() {
-    for(int x = 0; x < CHUNK_SIZE; x++)
-    {
-        for(int z = 0; z < CHUNK_SIZE; z++)
-        {
+    for(int x = 0; x < CHUNK_SIZE; x++) {
+        for(int z = 0; z < CHUNK_SIZE; z++) {
             // Use the noise library to get the height value of x, z
             int height = _manager.getNoiseValue(x + getPos().x(), z + getPos().z());
             height = std::max(height, 1);
-            for (int y = 0; y < height; y++)
-            {
+            for (int y = 0; y < height; y++) {
                 _voxels[x][y][z]->setActive(true);
+                _voxels[x][y][z]->setTop(y == (height - 1));
             }
         }
     }
     createMesh();
+}
+
+std::vector<Texture> VChunk::loadTextures() {
+    std::vector<Texture> textures;
+    //int cptId = 1;
+    for(auto it = texturesPath.begin(); it != texturesPath.end(); ++it) {
+        Texture texture;
+        QOpenGLTexture *tex = new QOpenGLTexture(QImage(it->first.c_str()).mirrored());
+        tex->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+        tex->setMagnificationFilter(QOpenGLTexture::NearestMipMapNearest);
+        tex->setWrapMode(QOpenGLTexture::Repeat);
+        tex->generateMipMaps();
+        tex->bind();
+        float aniso = 2.0;
+        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &aniso);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, aniso);
+        tex->release();
+        //texture.id = cptId++;
+        texture.id = tex->textureId();
+        texture.path = it->first;
+        texture.type = Mesh::DIFFUSE_MAP;
+        texture.uniformName = it->second;
+        texture.texture = tex;
+        textures.push_back(texture);
+    }
+    return textures;
 }

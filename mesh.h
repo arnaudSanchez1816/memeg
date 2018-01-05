@@ -16,6 +16,7 @@ struct Vertex {
     QVector3D _position;
     QVector3D _normal, _tangent;
     QVector2D _texCoords;
+    bool _isTop;
 };
 
 struct Texture {

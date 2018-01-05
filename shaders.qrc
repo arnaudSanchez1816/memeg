@@ -8,5 +8,6 @@
         <file>modelvshader.glsl</file>
         <file>sbfshader.glsl</file>
         <file>sbvshader.glsl</file>
+        <file>voxelfshader.glsl</file>
     </qresource>
 </RCC>

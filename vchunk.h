@@ -3,7 +3,9 @@
 
 #include "gameobject.h"
 #include "voxel.h"
+#include "vmesh.h"
 #include "vchunkmanager.h"
+#include <map>
 
 class VChunk : public GameObject
 {
@@ -19,15 +21,22 @@ public:
     void setupCube();
 private:
     VChunkManager &_manager;
-    Voxel ****_voxels;
-    std::unique_ptr<Mesh> _mesh;
+    Voxel ****_voxels; //matrice voxels
+    std::unique_ptr<VMesh> _voxelMesh; //mesh d'un voxel référence
+    std::unique_ptr<Mesh> _mesh; //mesh du chunk
     QOpenGLShaderProgram *_program;
     std::vector<Vertex> _vertices;
     std::vector<unsigned int> _indices;
     std::vector<Texture> _texs;
+    const std::map<std::string, std::string> texturesPath{
+        {"./assets/textures/grass_side.png", "grass_side"},
+        {"./assets/textures/grass_top_c.png", "grass_top"},
+        {"./assets/textures/dirt.png", "dirt"}
+    };
 
-    void addVoxel(const Voxel &voxel, unsigned int cpt);
+    void addVoxel(float x, float y, float z, unsigned int cpt, bool isTop);
     void createMesh();
+    std::vector<Texture> loadTextures();
 };
 
 #endif // VCHUNK_H

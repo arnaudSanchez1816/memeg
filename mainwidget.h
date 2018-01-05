@@ -113,7 +113,7 @@ private:
     QVector3D lightPos;
     std::shared_ptr<GameObject> scene, skybox, camera, chunk, chunk2;
     VChunkManager chunkManager;
-    QOpenGLShaderProgram program, particlesProgram, modelProgram, sbProgram;
+    QOpenGLShaderProgram program, modelProgram, sbProgram;
     std::vector<bool> keys;//0 Z, 1 Q, 2 S, 3 D, 4 Space
 
 };

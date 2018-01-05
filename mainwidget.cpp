@@ -221,10 +221,11 @@ void MainWidget::initializeGL()
     // Enable back face culling
     glEnable(GL_CULL_FACE);
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    particleEngineBullet = new ParticleEngine(ParticleType::Bullet, particlesProgram);
     scene = std::make_shared<Scene>();
     skybox = std::make_shared<Skybox>(sbProgram);
     camera = std::make_shared<Camera>();
+    camera->translate(0.0f, 50.0f, -60.0f);
+    camera->rotateX(20.0f);
     Camera *cam = static_cast<Camera*>(camera.get());
     gc.activeCamera = *cam;
     scene->addChild(camera);
@@ -243,7 +244,7 @@ void MainWidget::initializeGL()
 }
 
 void MainWidget::addChunk(float x, float z) {
-    std::shared_ptr<GameObject> chunk = std::make_shared<VChunk>(chunkManager, &modelProgram);
+    std::shared_ptr<GameObject> chunk = std::make_shared<VChunk>(chunkManager, &program);
     chunk->translate(x, 0.0f,z);
     VChunk * ch = static_cast<VChunk*>(chunk.get());
     ch->setupLandscape();
@@ -253,23 +254,13 @@ void MainWidget::addChunk(float x, float z) {
 void MainWidget::initShaders()
 {
         // Compile vertex shader
-        if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/vshader.glsl"))
+        if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/modelvshader.glsl"))
             close();
         // Compile fragment shader
-        if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/fshader.glsl"))
+        if (!program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/voxelfshader.glsl"))
             close();
         // Link shader pipeline
         if (!program.link())
-            close();
-
-        // Compile vertex shader
-        if (!particlesProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/prvshader.glsl"))
-            close();
-        // Compile fragment shader
-        if (!particlesProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/prfshader.glsl"))
-            close();
-        // Link shader pipeline
-        if (!particlesProgram.link())
             close();
 
         // Compile vertex shader
@@ -312,7 +303,7 @@ void MainWidget::paintGL()
         lastFrame = currentFrame;
     deltaTime = (currentFrame - lastFrame) / 1000.0;
     lastFrame = currentFrame;
-    Light dirLight(QVector3D(0.0, -1.0, 0.5));
+    Light dirLight(QVector3D(-0.2, -0.3, 0.6));
     // Clear color and depth buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Calculate model view transformation

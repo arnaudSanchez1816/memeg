@@ -12,6 +12,7 @@ public:
 
     int getNoiseValue(float x, float z);
 private:
+    float startX, startY, startZ;
 
 };
 

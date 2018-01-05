@@ -35,6 +35,10 @@ void Mesh::setupMesh(QOpenGLShaderProgram &_program) {
         int texcoordLocation = _program.attributeLocation("a_texcoord");
         _program.enableAttributeArray(texcoordLocation);
         _program.setAttributeBuffer(texcoordLocation, GL_FLOAT, (int) offsetof(Vertex, _texCoords), 2, sizeof(Vertex));
+        //vertex texture coords
+        int isTopLocation = _program.attributeLocation("a_isTop");
+        _program.enableAttributeArray(isTopLocation);
+        _program.setAttributeBuffer(isTopLocation, GL_INT, (int) offsetof(Vertex, _isTop), 1, sizeof(Vertex));
         vao.release();
     } else {
         vao.bind();
