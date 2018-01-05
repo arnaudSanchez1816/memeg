@@ -225,21 +225,29 @@ void MainWidget::initializeGL()
     scene = std::make_shared<Scene>();
     skybox = std::make_shared<Skybox>(sbProgram);
     camera = std::make_shared<Camera>();
-    chunk = std::make_shared<VChunk>(&modelProgram);
-    VChunk * ch = static_cast<VChunk*>(chunk.get());
-    ch->createMesh();
-    //voxel = std::make_shared<Voxel>(new Model("assets/cube/cube.obj",&modelProgram));
-   // voxel = std::make_shared<Voxel>(0.0, 0.0, 0.0, &modelProgram);
     Camera *cam = static_cast<Camera*>(camera.get());
     gc.activeCamera = *cam;
     scene->addChild(camera);
     scene->addChild(skybox);
-    scene->addChild(chunk);
-    chunk->rotateX(45);
-    chunk->rotateZ(60);
-    //scene->addChild(voxel);
+    addChunk(0.0f, 0.0f);
+    addChunk(VChunk::CHUNK_SIZE, 0.0f);
+    addChunk(-VChunk::CHUNK_SIZE, 0.0f);
+    addChunk(0.0f, VChunk::CHUNK_SIZE);
+    addChunk(0.0f, -VChunk::CHUNK_SIZE);
+    addChunk(VChunk::CHUNK_SIZE, VChunk::CHUNK_SIZE);
+    addChunk(-VChunk::CHUNK_SIZE, VChunk::CHUNK_SIZE);
+    addChunk(-VChunk::CHUNK_SIZE, -VChunk::CHUNK_SIZE);
+    addChunk(VChunk::CHUNK_SIZE, -VChunk::CHUNK_SIZE);
     // Use QBasicTimer because its faster than QTimer
     timer.start(1000/fps, this);
+}
+
+void MainWidget::addChunk(float x, float z) {
+    std::shared_ptr<GameObject> chunk = std::make_shared<VChunk>(chunkManager, &modelProgram);
+    chunk->translate(x, 0.0f,z);
+    VChunk * ch = static_cast<VChunk*>(chunk.get());
+    ch->setupLandscape();
+    scene->addChild(chunk);
 }
 
 void MainWidget::initShaders()

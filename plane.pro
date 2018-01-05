@@ -23,7 +23,8 @@ SOURCES += main.cpp \
     gamecontroller.cpp \
     voxel.cpp \
     vchunk.cpp \
-    vmesh.cpp
+    vmesh.cpp \
+    vchunkmanager.cpp
 
 SOURCES += \
     mainwidget.cpp
@@ -46,7 +47,8 @@ HEADERS += \
     gamecontroller.h \
     voxel.h \
     vchunk.h \
-    vmesh.h
+    vmesh.h \
+    vchunkmanager.h
 
 RESOURCES += \
     shaders.qrc \

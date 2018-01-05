@@ -3,8 +3,8 @@
 
 const int VChunk::CHUNK_SIZE;
 
-VChunk::VChunk(QOpenGLShaderProgram *program)
-    : _program(program)
+VChunk::VChunk(VChunkManager &manager, QOpenGLShaderProgram *program)
+    : _program(program), _manager(manager)
 {
     // Create the blocks
     _voxels = new Voxel***[CHUNK_SIZE];
@@ -89,3 +89,43 @@ void VChunk::addVoxel(const Voxel &voxel, unsigned int cpt) {
     std::transform(voxel._mesh->_indices.begin(), voxel._mesh->_indices.end(),std::back_inserter(_indices), [cpt] (unsigned int i) {return i + cpt;});
 }
 
+void VChunk::setupCube() {
+    for (int z = 0; z < CHUNK_SIZE; z++) {
+        for (int y = 0; y < CHUNK_SIZE; y++) {
+            for (int x = 0; x < CHUNK_SIZE; x++) {
+                 _voxels[x][y][z]->setActive(true);
+            }
+        }
+    }
+    createMesh();
+}
+
+void VChunk::setupSphere() {
+    for (int z = 0; z < CHUNK_SIZE; z++) {
+        for (int y = 0; y < CHUNK_SIZE; y++) {
+            for (int x = 0; x < CHUNK_SIZE; x++) {
+                if (sqrt((float) (x-CHUNK_SIZE/2.0f)*(x-CHUNK_SIZE/2.0f) + (y-CHUNK_SIZE/2.0f)*(y-CHUNK_SIZE/2.0f) + (z-CHUNK_SIZE/2.0f)*(z-CHUNK_SIZE/2.0f)) < CHUNK_SIZE/2.0f) {
+                    _voxels[x][y][z]->setActive(true);
+                }
+            }
+        }
+    }
+    createMesh();
+}
+
+void VChunk::setupLandscape() {
+    for(int x = 0; x < CHUNK_SIZE; x++)
+    {
+        for(int z = 0; z < CHUNK_SIZE; z++)
+        {
+            // Use the noise library to get the height value of x, z
+            int height = _manager.getNoiseValue(x + getPos().x(), z + getPos().z());
+            height = std::max(height, 1);
+            for (int y = 0; y < height; y++)
+            {
+                _voxels[x][y][z]->setActive(true);
+            }
+        }
+    }
+    createMesh();
+}

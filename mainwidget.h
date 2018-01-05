@@ -61,6 +61,7 @@
 #include "skybox.h"
 #include "gamecontroller.h"
 #include "vchunk.h"
+#include "vchunkmanager.h"
 
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions_4_2_Core>
@@ -82,6 +83,8 @@ public:
     static float deltaTime, lastFrame;
     explicit MainWidget(int msFPS, QWidget *parent = 0);
     ~MainWidget();
+
+    void addChunk(float x, float z);
 
 protected:
     void mousePressEvent(QMouseEvent *e) override;
@@ -108,7 +111,8 @@ private:
     float torrusTime;
     ParticleEngine *particleEngineBullet;
     QVector3D lightPos;
-    std::shared_ptr<GameObject> scene, skybox, camera, chunk;
+    std::shared_ptr<GameObject> scene, skybox, camera, chunk, chunk2;
+    VChunkManager chunkManager;
     QOpenGLShaderProgram program, particlesProgram, modelProgram, sbProgram;
     std::vector<bool> keys;//0 Z, 1 Q, 2 S, 3 D, 4 Space
 
